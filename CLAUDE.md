@@ -35,13 +35,19 @@ Both apps need a `.env` copied from `.env.example`. The backend requires a reach
 
 ### Docker (`cd` repo root)
 ```bash
-docker compose up -d --build      # builds + starts both — backend :3000, frontend :5173
+docker compose up -d --build      # builds + starts both — reachable at http://<host> (:80)
 docker compose logs -f backend    # or frontend
 docker compose down
 ```
 Requires `backend/.env` to already exist (`env_file:` in [docker-compose.yml](docker-compose.yml) — there's no root `.env`, and the backend still needs the same remote Postgres/Redis reachable from wherever the container runs). [backend/Dockerfile](backend/Dockerfile) is Debian slim, not alpine — `sqlite3` and `bufferutil` are optional native peers of TypeORM/socket.io that pnpm compiles from source (`allowBuilds` in `pnpm-workspace.yaml`), and alpine's musl libc is a common source of native-module breakage; the install stages install `python3 make g++` for that compile step. **`pnpm-workspace.yaml` must be copied into the image alongside `package.json`/`pnpm-lock.yaml`** before `pnpm install` — it's what carries the `allowBuilds` allowlist, and without it pnpm silently blocks those same build scripts (`ERR_PNPM_IGNORED_BUILDS`) instead of failing loudly.
 
-[frontend/Dockerfile](frontend/Dockerfile) builds a static bundle and serves it from nginx — no Node process in the final image. `VITE_API_BASE` is a **build-time** ARG baked into the JS bundle (Vite env vars aren't read at container start); the default (`http://localhost:3000`) is correct for the normal case of the browser and the containers sharing one host with published ports, and only needs overriding (`VITE_API_BASE` in the compose file, or `--build-arg` directly) when the backend is reachable at a different host/port than the browser.
+[frontend/Dockerfile](frontend/Dockerfile) builds a static bundle and serves it from nginx — no Node process in the final image.
+
+**nginx is the sole entry point** — [frontend/nginx.conf](frontend/nginx.conf) proxies `/api/*` and `/socket.io/*` straight through to the backend container (Compose's internal DNS resolves the service name `backend`), including the WebSocket upgrade headers Socket.IO needs. The browser only ever talks to nginx's origin, so it never makes a cross-origin request — CORS only matters for a client that reaches the backend directly, bypassing this proxy. To match, `VITE_API_BASE` defaults to **empty** in `docker-compose.yml` (same-origin, relative URLs) rather than an absolute `http://localhost:3000` — this is a **build-time** ARG baked into the JS bundle (Vite env vars aren't read at container start), so changing it means rebuilding the frontend image. [api.ts](frontend/src/services/api.ts) and [socket.ts](frontend/src/services/socket.ts) read it with `??`, not `||` — an intentionally-empty string must be honored as "same origin," not silently overridden by the `http://localhost:3000` fallback used for plain `pnpm dev` (where there's no nginx and the frontend really does need the backend's separate port).
+
+Only set `VITE_API_BASE` to an absolute URL if the frontend is served from somewhere this nginx doesn't front (e.g. a CDN in front of the static build, with the backend reachable at a fixed separate host).
+
+Frontend publishes host port `80` (plain HTTP, no TLS); the backend's `3000:3000` port mapping is commented out by default — uncomment it only for local debugging (curl/Postman straight to the API), never on a server exposed to the internet, since that bypasses nginx and puts the trading API directly on the open port.
 
 ## Architecture
 
