@@ -8,25 +8,17 @@
   }
 }
 
-/* Mirror Pip Custom Components & Utilities */
+/* Shared component classes - kept deliberately quiet: one accent color, no glow effects */
 .btn-mirror-primary {
-  @apply bg-[#9de600] hover:bg-[#a6f900] text-[#0c0e12] font-semibold px-5 py-2.5 rounded-xl transition-all duration-200 shadow-[0_0_20px_rgba(157,230,0,0.2)] hover:shadow-[0_0_30px_rgba(157,230,0,0.35)] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply bg-[#9de600] hover:bg-[#a6f900] text-[#0c0e12] font-semibold px-5 py-2.5 rounded-xl transition-colors duration-150 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
 .btn-mirror-secondary {
-  @apply bg-[#1a1e26] hover:bg-[#22262f] text-[#f7f7f7] hover:text-[#9de600] border border-[#22262f] hover:border-[#9de600]/40 font-medium px-4 py-2 rounded-xl transition-all duration-200 active:scale-95;
+  @apply bg-transparent hover:bg-[#1a1e26] text-[#cecfd2] hover:text-[#f7f7f7] border border-[#22262f] hover:border-[#373a41] font-medium px-4 py-2 rounded-xl transition-colors duration-150 active:scale-[0.98];
 }
 
 .mirror-card {
-  @apply bg-[#13161b] border border-[#22262f] rounded-2xl relative overflow-hidden transition-all duration-200 hover:border-[#373a41];
-}
-
-.stat-hover-line {
-  @apply absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#9de600] to-transparent opacity-0 transition-opacity duration-300 pointer-events-none;
-}
-
-.mirror-card:hover .stat-hover-line {
-  @apply opacity-100;
+  @apply bg-[#13161b] border border-[#22262f] rounded-2xl relative overflow-hidden transition-colors duration-150 hover:border-[#373a41];
 }
 
 /* Custom scrollbars */

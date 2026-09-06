@@ -284,10 +284,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
   if (!strategy) {
     return (
       <div className="text-center py-20 mirror-card p-8">
-        <div className="stat-hover-line" />
-        <ShieldCheck className="w-16 h-16 text-[#9de600] mx-auto mb-4" />
-        <h3 className="text-xl font-bold text-white">No Active Strategy Configured</h3>
-        <p className="text-[#85888e] text-sm mt-2 max-w-md mx-auto">
+        <ShieldCheck className="w-12 h-12 text-txt-dim mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-txt-primary">No Active Strategy Configured</h3>
+        <p className="text-txt-muted text-sm mt-2 max-w-md mx-auto">
           Please connect a broker account or configure your Covered Call strategy.
         </p>
         <button
@@ -349,11 +348,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
     <div className="space-y-6">
       {/* Ticker Selector */}
       {strategies && strategies.length > 1 && (
-        <div className="flex flex-wrap items-center justify-between gap-2.5 bg-[#13161b] border border-[#22262f] p-2.5 rounded-2xl">
-          <div className="flex items-center space-x-2 overflow-x-auto">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#85888e] px-2">
-              Trading Asset:
-            </span>
+        <div className="flex flex-wrap items-center justify-between gap-2.5 bg-surface-card border border-surface-border p-2 rounded-xl">
+          <div className="flex items-center gap-1.5 overflow-x-auto">
             {strategies.map((s) => {
               const isSelected = s.id === (strategy?.id || activeStrategyId);
               const isBtc = s.symbol?.includes('BTC');
@@ -364,20 +360,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <button
                   key={s.id}
                   onClick={() => onSelectStrategy && onSelectStrategy(s.id)}
-                  className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                     isSelected
-                      ? 'bg-[#9de600]/15 text-[#9de600] border border-[#9de600]/40 shadow-sm shadow-[#9de600]/10'
-                      : 'bg-[#1a1e26] text-[#cecfd2] hover:text-white hover:bg-[#22262f] border border-[#22262f]'
+                      ? 'bg-surface-elevated text-txt-primary'
+                      : 'text-txt-muted hover:text-txt-secondary'
                   }`}
                 >
                   <span className="font-mono">{icon}</span>
                   <span>{s.symbol || s.name}</span>
-                  <span className={`w-2 h-2 rounded-full ${s.status === 'ACTIVE' ? 'bg-[#9de600] animate-pulse' : 'bg-[#61656c]'}`} />
-                  {hasPos && (
-                    <span className="px-1.5 py-0.2 rounded text-[10px] bg-[#9de600]/20 text-[#9de600] font-bold border border-[#9de600]/30">
-                      Open
-                    </span>
-                  )}
+                  <span className={`w-1.5 h-1.5 rounded-full ${s.status === 'ACTIVE' ? 'bg-brand' : 'bg-txt-dim'}`} />
+                  {hasPos && <span className="text-[10px] text-brand font-bold">Open</span>}
                 </button>
               );
             })}
@@ -385,30 +377,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
           <button
             onClick={onEditStrategy}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[#1a1e26] hover:bg-[#22262f] text-[#cecfd2] hover:text-[#9de600] text-xs font-bold transition border border-[#22262f]"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-txt-muted hover:text-txt-primary text-xs font-semibold transition-colors"
           >
-            <SlidersHorizontal className="w-3.5 h-3.5 text-[#9de600]" />
-            <span>Configure Strategy</span>
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span>Configure</span>
           </button>
         </div>
       )}
 
       {/* Hero Trading Control Bar */}
-      <div className="mirror-card p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative overflow-hidden">
-        <div className="stat-hover-line" />
-        <div>
+      <div className="mirror-card p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-3">
+            <span className={`w-2.5 h-2.5 rounded-full ${strategy.status === 'ACTIVE' ? 'bg-brand animate-pulse' : 'bg-amber-400'}`} />
+            <h2 className="text-xl font-bold text-txt-primary tracking-tight">{strategy.name}</h2>
             <span
-              className={`w-3 h-3 rounded-full ${
-                strategy.status === 'ACTIVE' ? 'bg-[#9de600] animate-pulse shadow-[0_0_8px_#9de600]' : 'bg-amber-400'
-              }`}
-            />
-            <h2 className="text-2xl font-black text-white tracking-tight">{strategy.name}</h2>
-            <span
-              className={`text-xs px-2.5 py-0.5 rounded-full font-bold border ${
-                strategy.status === 'ACTIVE'
-                  ? 'bg-[#9de600]/15 text-[#9de600] border-[#9de600]/30'
-                  : 'bg-amber-400/10 text-amber-300 border-amber-400/30'
+              className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${
+                strategy.status === 'ACTIVE' ? 'bg-brand/15 text-brand' : 'bg-amber-400/10 text-amber-300'
               }`}
             >
               {strategy.status}
@@ -416,12 +401,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
             {/* Live Next Trade Countdown Badge */}
             <div
-              className={`inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-mono font-bold border transition ${
+              className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-semibold ${
                 countdown.isTriggering
-                  ? 'bg-amber-400/20 text-amber-300 border-amber-400/50 animate-pulse'
+                  ? 'bg-amber-400/15 text-amber-300 animate-pulse'
                   : strategy.status === 'ACTIVE'
-                  ? 'bg-[#0c0e12] text-[#9de600] border-[#9de600]/40 shadow-sm shadow-[#9de600]/10'
-                  : 'bg-[#1a1e26] text-[#85888e] border-[#22262f]'
+                  ? 'bg-surface-elevated text-brand'
+                  : 'bg-surface-elevated text-txt-muted'
               }`}
               title={
                 strategy.status === 'ACTIVE'
@@ -431,60 +416,42 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   : 'Engine is paused'
               }
             >
-              <Clock className={`w-3.5 h-3.5 ${strategy.status === 'ACTIVE' ? 'text-[#9de600] animate-pulse' : 'text-[#85888e]'}`} />
-              <span className="text-[#85888e] text-[10px] uppercase tracking-wider font-sans font-semibold">
-                {stage === 'IN_POSITION' ? 'Next Check:' : 'Next Entry:'}
+              <Clock className="w-3.5 h-3.5" />
+              <span className="text-txt-dim text-[10px] uppercase tracking-wider font-sans font-semibold">
+                {stage === 'IN_POSITION' ? 'Next check' : 'Next entry'}
               </span>
-              <span className={strategy.status === 'ACTIVE' ? 'text-[#9de600] font-black' : 'text-[#85888e]'}>
-                {countdown.display}
-              </span>
+              <span>{countdown.display}</span>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-[#85888e]">
-            <span className="inline-flex items-center space-x-1.5">
-              <span>Broker:</span>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 mt-3 text-xs">
+            <span className="inline-flex items-center gap-1.5 text-txt-muted">
+              Broker
               {broker?.brokerType?.startsWith('delta-') ? (
-                <span className="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded-md bg-[#0c0e12] border border-[#22262f] text-white font-semibold">
+                <span className="inline-flex items-center gap-1.5 text-txt-secondary font-medium">
                   <DeltaLogo
                     variant="icon"
                     className="w-3.5 h-3.5"
                     type={broker.brokerType === 'delta-global' ? 'global' : 'india'}
                   />
-                  <span>{broker?.name || 'Delta Exchange'}</span>
+                  {broker?.name || 'Delta Exchange'}
                 </span>
               ) : (
-                <strong className="text-[#f7f7f7]">{broker?.name || 'Paper Simulator'}</strong>
+                <span className="text-txt-secondary font-medium">{broker?.name || 'Paper Simulator'}</span>
               )}
             </span>
-            <span>•</span>
-            <span>Symbol: <strong className="text-[#f7f7f7] font-mono">{strategy.symbol}</strong></span>
-            <span>•</span>
-            <span>Margin Mode: <strong className="text-[#9de600] font-mono uppercase font-semibold">{strategy.marginMode || strategy.legsConfig?.marginMode || 'PORTFOLIO'}</strong></span>
-            <span>•</span>
-            <span>Routine: <strong className="text-[#f7f7f7]">{formatSchedule(strategy.triggerConfig)}</strong></span>
-            <span>•</span>
-            <span>Stage: <strong className="text-[#9de600] font-mono uppercase font-bold">{stage}</strong></span>
-            <span>•</span>
-            <span className="flex items-center space-x-1.5">
-              <span>{stage === 'IN_POSITION' ? 'Next Routine Check:' : 'Next Entry:'}</span>
-              <strong className="text-[#9de600] font-mono">{countdown.display}</strong>
-              {stage === 'IN_POSITION' && (
-                <span className="text-[10px] text-cyan-400 font-semibold">(Holding &bull; &ge;1% DD: Avg Fut+Call | &lt;1% DD: Short Call [ATM if match, else OTM])</span>
-              )}
-            </span>
+            <span className="text-txt-muted">Symbol <span className="text-txt-secondary font-medium font-mono">{strategy.symbol}</span></span>
+            <span className="text-txt-muted">Margin <span className="text-txt-secondary font-medium uppercase">{strategy.marginMode || strategy.legsConfig?.marginMode || 'PORTFOLIO'}</span></span>
+            <span className="text-txt-muted">Schedule <span className="text-txt-secondary font-medium">{formatSchedule(strategy.triggerConfig)}</span></span>
+            <span className="text-txt-muted">Stage <span className="text-txt-secondary font-medium uppercase">{stage}</span></span>
           </div>
 
           {strategy.state?.lastEvaluatedAt && (
-            <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[11px] text-[#85888e]">
-              <span className="inline-flex items-center space-x-1.5 bg-[#0c0e12] px-2.5 py-1 rounded-lg border border-[#22262f]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#9de600]" />
-                <span>Last Evaluated:</span>
-                <strong className="text-[#cecfd2] font-mono">{formatLastChecked(strategy.state.lastEvaluatedAt)}</strong>
-              </span>
+            <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[11px] text-txt-dim">
+              <span>Last evaluated {formatLastChecked(strategy.state.lastEvaluatedAt)}</span>
               {strategy.state?.lastMessage && (
-                <span className="text-[#85888e] max-w-xl truncate font-mono text-[10px]" title={strategy.state.lastMessage}>
-                  {strategy.state.lastMessage}
+                <span className="text-txt-dim max-w-xl truncate font-mono" title={strategy.state.lastMessage}>
+                  · {strategy.state.lastMessage}
                 </span>
               )}
             </div>
@@ -496,9 +463,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <button
             onClick={handleToggle}
             disabled={actionLoading}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition ${
+            className={`px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors ${
               strategy.status === 'ACTIVE'
-                ? 'bg-[#1a1e26] hover:bg-[#22262f] text-amber-400 border border-amber-400/30'
+                ? 'bg-amber-400/10 hover:bg-amber-400/20 text-amber-400'
                 : 'btn-mirror-primary'
             }`}
           >
@@ -512,66 +479,61 @@ export const Dashboard: React.FC<DashboardProps> = ({
             className="btn-mirror-secondary px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center space-x-1.5"
             title={`Evaluate ${formatSchedule(strategy.triggerConfig)} routine immediately`}
           >
-            <Zap className="w-4 h-4 text-[#9de600]" />
+            <Zap className="w-4 h-4 text-brand" />
             <span>Check Now</span>
           </button>
 
           <button
             onClick={handleSquareOff}
             disabled={actionLoading}
-            className="px-5 py-2.5 rounded-xl text-xs font-bold bg-[#f04438] hover:bg-[#d92d20] text-white shadow-lg shadow-[#f04438]/20 transition flex items-center space-x-2 active:scale-95"
+            className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-danger/10 hover:bg-danger/20 text-danger transition-colors flex items-center gap-2"
           >
-            <AlertTriangle className="w-4 h-4 text-white" />
-            <span>Emergency Square Off All</span>
+            <AlertTriangle className="w-4 h-4" />
+            <span>Emergency Square Off</span>
           </button>
         </div>
       </div>
 
-      {/* Prominent Strategy Status / Exchange Rejection Alert Banner */}
+      {/* Strategy Status / Exchange Rejection Alert Banner */}
       {strategy.state?.lastMessage && (() => {
         const msg = strategy.state.lastMessage;
+        const isMarginError = msg.toLowerCase().includes('insufficient_margin');
         const isError =
           msg.toLowerCase().includes('fail') ||
           msg.toLowerCase().includes('error') ||
           msg.toLowerCase().includes('reject') ||
-          msg.toLowerCase().includes('insufficient_margin');
+          isMarginError;
 
         return (
           <div
-            className={`p-4 rounded-xl border flex items-start space-x-3 transition-all ${
-              isError
-                ? 'bg-[#f04438]/10 border-[#f04438]/40 text-white shadow-lg shadow-[#f04438]/10'
-                : 'bg-[#9de600]/10 border-[#9de600]/30 text-white shadow-lg shadow-[#9de600]/10'
+            className={`p-4 rounded-xl border flex items-start gap-3 ${
+              isError ? 'bg-danger/5 border-danger/20' : 'bg-brand/5 border-brand/20'
             }`}
           >
             {isError ? (
-              <AlertCircle className="w-5 h-5 text-[#f04438] shrink-0 mt-0.5" />
+              <AlertCircle className="w-4 h-4 text-danger shrink-0 mt-0.5" />
             ) : (
-              <CheckCircle2 className="w-5 h-5 text-[#9de600] shrink-0 mt-0.5" />
+              <CheckCircle2 className="w-4 h-4 text-brand shrink-0 mt-0.5" />
             )}
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className={`text-xs font-bold uppercase tracking-wider ${isError ? 'text-[#f04438]' : 'text-[#9de600]'}`}>
-                  {isError ? '⚠️ Order Placement Notice / Exchange Rejection' : '✅ Latest Routine Action Status'}
+                <span className={`text-xs font-semibold ${isError ? 'text-danger' : 'text-brand'}`}>
+                  {isError ? 'Order Placement Notice' : 'Latest Routine Action'}
                 </span>
                 {strategy.state.lastEvaluatedAt && (
-                  <span className="text-[11px] text-[#85888e] font-mono">
-                    Last Checked: {formatLastChecked(strategy.state.lastEvaluatedAt)}
+                  <span className="text-[11px] text-txt-dim font-mono">
+                    {formatLastChecked(strategy.state.lastEvaluatedAt)}
                   </span>
                 )}
               </div>
-              <p className="mt-1 text-xs font-mono text-[#f7f7f7] leading-relaxed break-words">
+              <p className="mt-1 text-xs font-mono text-txt-secondary leading-relaxed break-words">
                 {msg}
               </p>
-              {msg.toLowerCase().includes('insufficient_margin') && (
-                <div className="mt-2.5 p-3 rounded-lg bg-[#f04438]/15 border border-[#f04438]/30 text-xs text-[#fca5a5]">
-                  <strong className="text-white block mb-1">Why did Delta Exchange reject the order?</strong>
-                  Each short option contract requires isolated USD collateral margin. As the engine placed routine orders (accumulating 6 short contracts on Delta), your available balance dropped to ~$0.076 USD while Delta requires additional margin per lot.
-                  <div className="mt-2 flex flex-col sm:flex-row sm:items-center gap-2">
-                    <span className="font-semibold text-white">To continue placing orders:</span>
-                    <span>1. Deposit USD / USDT into your Delta Exchange wallet, OR</span>
-                    <span>2. Square off or close running positions in the Live Positions table below.</span>
-                  </div>
+              {isMarginError && (
+                <div className="mt-2.5 p-3 rounded-lg bg-danger/10 text-xs text-txt-secondary">
+                  <strong className="text-txt-primary block mb-1">Order rejected for insufficient margin</strong>
+                  Each short option contract requires collateral on the exchange. To continue placing orders,
+                  deposit more balance into the broker account, or reduce/close open positions below.
                 </div>
               )}
             </div>
@@ -582,78 +544,49 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* 3 Clear Summary Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Metric 1: Live Mark Price */}
-        <div
-          className={`mirror-card p-5 group transition-all duration-300 ${
-            priceDirection === 'up'
-              ? 'border-[#9de600]/60 bg-[#9de600]/5'
-              : priceDirection === 'down'
-              ? 'border-[#f04438]/60 bg-[#f04438]/5'
-              : ''
-          }`}
-        >
-          <div className="stat-hover-line" />
-          <div className="flex items-center justify-between text-xs text-[#85888e]">
-            <span className="flex items-center space-x-1.5 font-semibold">
-              <span className="w-2 h-2 rounded-full bg-[#9de600] animate-ping" />
-              <span>Live {strategy.symbol || 'BTC'} Price</span>
-            </span>
+        <div className="mirror-card p-5">
+          <div className="flex items-center justify-between text-xs text-txt-muted">
+            <span className="font-medium">Live {strategy.symbol || 'BTC'} Price</span>
             <span
-              className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${
-                priceDirection === 'up'
-                  ? 'bg-[#9de600]/20 text-[#9de600]'
-                  : priceDirection === 'down'
-                  ? 'bg-[#f04438]/20 text-[#f04438]'
-                  : 'text-[#85888e] bg-[#1a1e26]'
+              className={`text-[10px] font-mono font-semibold ${
+                priceDirection === 'up' ? 'text-brand' : priceDirection === 'down' ? 'text-danger' : 'text-txt-dim'
               }`}
             >
-              {priceDirection === 'up' ? '▲ UP' : priceDirection === 'down' ? '▼ DOWN' : 'LIVE'}
+              {priceDirection === 'up' ? '▲' : priceDirection === 'down' ? '▼' : '●'} LIVE
             </span>
           </div>
-          <div className="mt-2 text-2xl font-mono font-black text-white">
+          <div className="mt-2 text-2xl font-mono font-semibold text-txt-primary">
             ${currentAssetPrice > 0 ? currentAssetPrice.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '---'}
           </div>
-          <p className="text-[11px] text-[#85888e] mt-1 font-mono">
-            Streaming real-time ticks
-          </p>
+          <p className="text-[11px] text-txt-dim mt-1">Streaming real-time ticks</p>
         </div>
 
         {/* Metric 2: Trend & Stage */}
-        <div className="mirror-card p-5 group">
-          <div className="stat-hover-line" />
-          <div className="flex items-center justify-between text-xs text-[#85888e]">
-            <span className="font-semibold">Trend Direction</span>
-            <TrendingUp className="w-4 h-4 text-[#9de600]" />
+        <div className="mirror-card p-5">
+          <div className="flex items-center justify-between text-xs text-txt-muted">
+            <span className="font-medium">Trend Direction</span>
+            <TrendingUp className="w-4 h-4 text-txt-dim" />
           </div>
-          <div className="mt-2 flex items-center space-x-2">
-            <span
-              className={`w-3 h-3 rounded-full ${
-                indicatorStatus?.trend === 'BEARISH' ? 'bg-[#f04438]' : 'bg-[#9de600]'
-              }`}
-            />
-            <span className="text-xl font-black text-white tracking-tight">
+          <div className="mt-2 flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${indicatorStatus?.trend === 'BEARISH' ? 'bg-danger' : 'bg-brand'}`} />
+            <span className="text-xl font-semibold text-txt-primary tracking-tight">
               {indicatorStatus?.trend || 'BULLISH'}
             </span>
           </div>
-          <p className="text-[11px] text-[#85888e] mt-1 font-mono">
-            Stage: <span className="text-[#9de600] font-bold">{stage}</span>
+          <p className="text-[11px] text-txt-dim mt-1">
+            Stage <span className="text-txt-secondary font-medium">{stage}</span>
           </p>
         </div>
 
         {/* Metric 3: Future Profit Target */}
-        <div className="mirror-card p-5 group">
-          <div className="stat-hover-line" />
-          <div className="flex items-center justify-between text-xs text-[#85888e]">
-            <span className="font-semibold">Profit Target Goal</span>
-            <span className="text-xs font-mono font-bold text-[#9de600]">
-              {strategy.exitRules?.futureProfitTargetPercent || 4.5}%
-            </span>
+        <div className="mirror-card p-5">
+          <div className="flex items-center justify-between text-xs text-txt-muted">
+            <span className="font-medium">Profit Target Goal</span>
           </div>
-          <div className="mt-2 text-2xl font-mono font-black text-white">
+          <div className="mt-2 text-2xl font-mono font-semibold text-brand">
             +{strategy.exitRules?.futureProfitTargetPercent || 4.5}%
           </div>
-          <p className="text-[11px] text-[#85888e] mt-1 font-mono">
-            Auto squares off both legs on hit
-          </p>
+          <p className="text-[11px] text-txt-dim mt-1">Auto squares off both legs on hit</p>
         </div>
       </div>
 
@@ -670,23 +603,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
         );
 
         return (
-          <div className="mirror-card rounded-2xl overflow-hidden relative">
-            <div className="stat-hover-line" />
-            <div className="px-6 py-4 border-b border-[#22262f] flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center space-x-2">
-                <Terminal className="w-4 h-4 text-[#9de600]" />
-                <h3 className="text-base font-bold text-white">Recent Trade Activity</h3>
+          <div className="mirror-card rounded-2xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-surface-border flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Terminal className="w-4 h-4 text-txt-muted" />
+                <h3 className="text-sm font-semibold text-txt-primary">Recent Trade Activity</h3>
               </div>
-              <div className="flex items-center space-x-3 text-xs">
-                <div className="flex items-center space-x-1.5 text-[#85888e]">
-                  <span>Rows:</span>
+              <div className="flex items-center gap-3 text-xs">
+                <div className="flex items-center gap-1.5 text-txt-muted">
+                  <span>Rows</span>
                   <select
                     value={activityPageSize}
                     onChange={(e) => {
                       setActivityPageSize(Number(e.target.value));
                       setActivityPage(1);
                     }}
-                    className="bg-[#0c0e12] border border-[#22262f] rounded px-2 py-1 text-white text-xs focus:outline-none focus:border-[#9de600]"
+                    className="bg-surface-elevated border border-surface-border rounded px-2 py-1 text-txt-primary text-xs focus:outline-none focus:border-brand/50"
                   >
                     <option value={5}>5</option>
                     <option value={10}>10</option>
@@ -694,15 +626,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     <option value={50}>50</option>
                   </select>
                 </div>
-                <span className="text-xs text-[#85888e] font-mono">
-                  {tradeLogs.length} total events
-                </span>
+                <span className="text-txt-dim">{tradeLogs.length} total</span>
               </div>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-[#0c0e12] text-[#85888e] border-b border-[#22262f] uppercase tracking-wider font-semibold text-[11px]">
+                <thead className="text-txt-dim border-b border-surface-border uppercase tracking-wider font-medium text-[11px]">
                   <tr>
                     <th className="px-5 py-3">Time</th>
                     <th className="px-5 py-3">Action</th>
@@ -712,30 +642,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     <th className="px-5 py-3">Details</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#22262f] font-mono">
+                <tbody className="divide-y divide-surface-border font-mono">
                   {paginatedTradeLogs.map((log) => {
                     const isFail = log.action.includes('FAIL') || log.action.includes('REJECT');
                     const isBuy = log.action.includes('BUY');
-                    const isSquareOff = log.action.includes('SQUARE_OFF') || log.action.includes('CLOSE');
-                    const isRoll = log.action.includes('ROLL');
+                    const isNegative = isFail || log.action.includes('SQUARE_OFF') || log.action.includes('CLOSE');
 
                     return (
-                      <tr key={log.id} className="hover:bg-[#0c0e12]/60 transition">
-                        <td className="px-5 py-3 text-[#85888e] font-sans">
+                      <tr key={log.id} className="hover:bg-surface-elevated/50 transition-colors">
+                        <td className="px-5 py-3 text-txt-dim font-sans">
                           {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                         </td>
                         <td className="px-5 py-3">
                           <span
-                            className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[11px] font-bold ${
-                              isFail
-                                ? 'bg-[#f04438]/15 text-[#f04438] border border-[#f04438]/30'
-                                : isSquareOff
-                                ? 'bg-[#f04438]/10 text-[#f04438] border border-[#f04438]/20'
-                                : isRoll
-                                ? 'bg-[#b692f6]/10 text-[#d6bbfb] border border-[#b692f6]/20'
-                                : isBuy
-                                ? 'bg-[#9de600]/10 text-[#9de600] border border-[#9de600]/20'
-                                : 'bg-[#38bdf8]/10 text-[#38bdf8] border border-[#38bdf8]/20'
+                            className={`inline-flex items-center gap-1 text-[11px] font-semibold ${
+                              isNegative ? 'text-danger' : isBuy ? 'text-brand' : 'text-txt-secondary'
                             }`}
                           >
                             {isFail ? (
@@ -748,16 +669,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             <span>{log.action}</span>
                           </span>
                         </td>
-                        <td className="px-5 py-3 font-bold text-white">{log.symbol}</td>
-                        <td className="px-5 py-3 text-[#cecfd2]">${log.price.toLocaleString()}</td>
-                        <td className="px-5 py-3 text-[#85888e]">{log.quantity}</td>
+                        <td className="px-5 py-3 font-semibold text-txt-primary">{log.symbol}</td>
+                        <td className="px-5 py-3 text-txt-secondary">${log.price.toLocaleString()}</td>
+                        <td className="px-5 py-3 text-txt-muted">{log.quantity}</td>
                         <td
-                          className={`px-5 py-3 font-sans text-xs max-w-xs truncate ${
-                            isFail ? 'text-[#fca5a5] font-semibold' : 'text-[#85888e]'
-                          }`}
+                          className={`px-5 py-3 font-sans text-xs max-w-xs truncate ${isFail ? 'text-danger' : 'text-txt-dim'}`}
                           title={log.details}
                         >
-                          {log.details || '---'}
+                          {log.details || '—'}
                         </td>
                       </tr>
                     );
@@ -765,7 +684,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
                   {tradeLogs.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-5 py-8 text-center text-[#85888e] font-sans">
+                      <td colSpan={6} className="px-5 py-8 text-center text-txt-dim font-sans">
                         No trades executed yet. The automated engine logs every trade event here.
                       </td>
                     </tr>
@@ -776,26 +695,26 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
             {/* Pagination Controls */}
             {tradeLogs.length > 0 && (
-              <div className="px-6 py-3.5 bg-[#0c0e12]/80 border-t border-[#22262f] flex flex-wrap items-center justify-between gap-3 text-xs">
-                <div className="text-[#85888e]">
-                  Showing <span className="text-white font-medium">{(currentActPage - 1) * activityPageSize + 1}</span> to{' '}
-                  <span className="text-white font-medium">
+              <div className="px-6 py-3.5 border-t border-surface-border flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div className="text-txt-dim">
+                  Showing <span className="text-txt-secondary font-medium">{(currentActPage - 1) * activityPageSize + 1}</span> to{' '}
+                  <span className="text-txt-secondary font-medium">
                     {Math.min(currentActPage * activityPageSize, tradeLogs.length)}
                   </span>{' '}
-                  of <span className="text-white font-medium">{tradeLogs.length}</span> entries
+                  of <span className="text-txt-secondary font-medium">{tradeLogs.length}</span> entries
                 </div>
 
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => setActivityPage((p) => Math.max(p - 1, 1))}
                     disabled={currentActPage <= 1}
-                    className="flex items-center space-x-1 px-3 py-1.5 rounded-lg border border-[#22262f] bg-[#13161b] text-white hover:border-[#9de600]/40 disabled:opacity-30 disabled:cursor-not-allowed transition text-xs font-medium"
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-txt-secondary hover:bg-surface-elevated disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-xs font-medium"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
                     <span>Previous</span>
                   </button>
 
-                  <div className="flex items-center space-x-1">
+                  <div className="flex items-center gap-1">
                     {Array.from({ length: totalActivityPages }, (_, i) => i + 1)
                       .filter((p) => p === 1 || p === totalActivityPages || Math.abs(p - currentActPage) <= 1)
                       .reduce<(number | string)[]>((acc, p, idx, arr) => {
@@ -807,17 +726,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       }, [])
                       .map((item, idx) =>
                         typeof item === 'string' ? (
-                          <span key={`dots-${idx}`} className="px-1 text-[#85888e]">
+                          <span key={`dots-${idx}`} className="px-1 text-txt-dim">
                             ...
                           </span>
                         ) : (
                           <button
                             key={item}
                             onClick={() => setActivityPage(item)}
-                            className={`w-7 h-7 rounded-lg text-xs font-medium transition ${
+                            className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors ${
                               currentActPage === item
-                                ? 'bg-[#9de600] text-black font-bold'
-                                : 'bg-[#13161b] border border-[#22262f] text-white hover:border-[#9de600]/40'
+                                ? 'bg-brand text-surface-base font-semibold'
+                                : 'text-txt-secondary hover:bg-surface-elevated'
                             }`}
                           >
                             {item}
@@ -829,7 +748,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <button
                     onClick={() => setActivityPage((p) => Math.min(p + 1, totalActivityPages))}
                     disabled={currentActPage >= totalActivityPages}
-                    className="flex items-center space-x-1 px-3 py-1.5 rounded-lg border border-[#22262f] bg-[#13161b] text-white hover:border-[#9de600]/40 disabled:opacity-30 disabled:cursor-not-allowed transition text-xs font-medium"
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-txt-secondary hover:bg-surface-elevated disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-xs font-medium"
                   >
                     <span>Next</span>
                     <ChevronRight className="w-3.5 h-3.5" />
@@ -840,14 +759,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         );
       })()}
-
-      {/* Latest Strategy Status Notice */}
-      {strategy.state?.lastMessage && (
-        <div className="mirror-card p-4 flex items-center space-x-3 text-xs text-[#85888e]">
-          <Clock className="w-4 h-4 text-[#9de600] shrink-0" />
-          <span>Latest Engine Status: <strong className="text-[#f7f7f7]">{strategy.state.lastMessage}</strong></span>
-        </div>
-      )}
     </div>
   );
 };

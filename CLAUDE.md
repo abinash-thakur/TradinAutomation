@@ -33,6 +33,16 @@ pnpm lint                         # oxlint (not eslint)
 
 Both apps need a `.env` copied from `.env.example`. The backend requires a reachable **remote** PostgreSQL and Redis — there is no local/docker DB setup and no migrations (`synchronize: true` in [app.module.ts](backend/src/app.module.ts)), so schema changes come from editing entities. On first boot [database-seed.service.ts](backend/src/config/database-seed.service.ts) inserts a paper-trading broker, a Delta template account, and BTC/ETH covered-call strategies if the tables are empty.
 
+### Docker (`cd` repo root)
+```bash
+docker compose up -d --build      # builds + starts both — backend :3000, frontend :5173
+docker compose logs -f backend    # or frontend
+docker compose down
+```
+Requires `backend/.env` to already exist (`env_file:` in [docker-compose.yml](docker-compose.yml) — there's no root `.env`, and the backend still needs the same remote Postgres/Redis reachable from wherever the container runs). [backend/Dockerfile](backend/Dockerfile) is Debian slim, not alpine — `sqlite3` and `bufferutil` are optional native peers of TypeORM/socket.io that pnpm compiles from source (`allowBuilds` in `pnpm-workspace.yaml`), and alpine's musl libc is a common source of native-module breakage; the install stages install `python3 make g++` for that compile step. **`pnpm-workspace.yaml` must be copied into the image alongside `package.json`/`pnpm-lock.yaml`** before `pnpm install` — it's what carries the `allowBuilds` allowlist, and without it pnpm silently blocks those same build scripts (`ERR_PNPM_IGNORED_BUILDS`) instead of failing loudly.
+
+[frontend/Dockerfile](frontend/Dockerfile) builds a static bundle and serves it from nginx — no Node process in the final image. `VITE_API_BASE` is a **build-time** ARG baked into the JS bundle (Vite env vars aren't read at container start); the default (`http://localhost:3000`) is correct for the normal case of the browser and the containers sharing one host with published ports, and only needs overriding (`VITE_API_BASE` in the compose file, or `--build-arg` directly) when the backend is reachable at a different host/port than the browser.
+
 ## Architecture
 
 ### Execution flow
@@ -60,6 +70,8 @@ There is no rate limiting on `/api/auth/login` or `/api/auth/resend-otp`, and no
 Trade notifications hook into two existing single-funnel points rather than each call site:
 - **Order placed** — `StrategyEngineService.logTrade()` (every real order fill runs through here already) fires `notifyOrderPlaced()` for a whitelisted action set (`BUY_FUTURE_ENTRY`, `SELL_CALL_ENTRY`, `BUY_FUTURE_AVERAGING`, `SELL_CALL_ATM_MATCH`, `SELL_CALL_OTM`, `ROLL_CLOSE_EXPIRING_CALL`). `*_FAILED` and `ROLLBACK_*` rows do **not** email — only successful placements do.
 - **Square off** — `emergencySquareOff()` accumulates every leg it closes into a `closedLegs` array and sends **one** batched email per square-off event at the end, not one per leg (a covered-call square-off closes 2 legs; that should read as one event, not two emails).
+
+**Deliverability**: every send is multipart/alternative (`text` + `html`, via the shared private `send()`) with a matching `replyTo`, sentence-style subjects/bodies (`ACTION_LABELS` maps raw action codes like `BUY_FUTURE_ENTRY` to "future buy order filled" for both subject and body), and a plain, banner-free HTML wrapper (`wrap()`) — the combination that matters most for a personal Gmail-SMTP relay, where the biggest signals are a missing text part and bulk/marketing-style formatting. None of this overrides a sender Gmail has already learned to spam-filter for a given recipient — that needs a manual "Not Spam" / add-to-contacts on the recipient's end, once.
 
 `logTrade()`'s first parameter is the `Strategy` entity (not just `strategyId`) specifically so it has `strategy.name` for the email body — a deliberate signature change from the original `strategyId: string`.
 
@@ -102,7 +114,12 @@ Independent of any configured broker: hardcoded to `api.india.delta.exchange` wi
 ### Frontend ([frontend/src/](frontend/src/))
 No router or state library. [App.tsx](frontend/src/App.tsx) owns all app state, does one `loadData()` fan-out over [services/api.ts](frontend/src/services/api.ts), subscribes to the socket once, and switches between three tabs (dashboard / strategy / brokers). Most logic lives in three large components (`Dashboard`, `PrebuiltStrategyPanel`, `PositionsTable`, 600–1000 lines each) that take props and call `onRefresh`.
 
-`api.ts` is the single HTTP surface — every backend route has a typed wrapper there; keep it in sync when adding controller routes. Styling uses the dark design tokens in [tailwind.config.js](frontend/tailwind.config.js) (`brand` lime `#9de600`, `surface.*`, `txt.*`, `danger.*`) — use those tokens instead of new raw hex values.
+`api.ts` is the single HTTP surface — every backend route has a typed wrapper there; keep it in sync when adding controller routes.
+
+### Design language
+Refined dark theme, one accent color used sparingly. Always use the tokens in [tailwind.config.js](frontend/tailwind.config.js) — `brand` (lime `#9de600`, the only accent), `surface.{base,card,elevated,border,borderLight}`, `txt.{primary,secondary,muted,dim}`, `danger` — never raw hex values; `amber-400`/`amber-300` (Tailwind's own palette) is the one sanctioned second hue, reserved for a paused/pending state. `.mirror-card`, `.btn-mirror-primary`, `.btn-mirror-secondary` in [index.css](frontend/src/index.css) are the shared card/button classes.
+
+Deliberately absent, don't reintroduce: glow/shadow-on-color effects (no `shadow-[0_0_Npx_#hex]`, no `shadow-lime`), `animate-ping`, decorative gradients, or `font-black`/`font-bold` on headings (use `font-semibold`). A card is `mirror-card` with one 1px border — never stack a bordered wrapper inside another bordered card. A "selected" tab/pill is a plain background swap (`bg-surface-elevated text-txt-primary`, no border, no shadow); a border is reserved for larger selectable option cards (e.g. the margin-mode picker in `PrebuiltStrategyPanel`) where it communicates a real choice, not for tabs. The Navbar has no ticker marquee — live BTC/ETH prices sit as plain text pills in the header.
 
 ## Domain conventions
 

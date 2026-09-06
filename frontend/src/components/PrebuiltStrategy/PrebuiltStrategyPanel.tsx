@@ -78,9 +78,9 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
 
   if (!strategy) {
     return (
-      <div className="mirror-card p-12 text-center text-[#85888e]">
-        <SlidersHorizontal className="w-12 h-12 text-[#9de600] mx-auto mb-3" />
-        <h3 className="text-lg font-bold text-white">No Strategy Selected</h3>
+      <div className="mirror-card p-12 text-center text-txt-muted">
+        <SlidersHorizontal className="w-12 h-12 text-brand mx-auto mb-3" />
+        <h3 className="text-lg font-bold text-txt-primary">No Strategy Selected</h3>
         <p className="text-xs mt-1">Please select or connect a broker account first.</p>
       </div>
     );
@@ -186,22 +186,21 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
     <div className="space-y-6">
       {/* Top Header & Strategy Status */}
       <div className="mirror-card p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative overflow-hidden">
-        <div className="stat-hover-line" />
         <div>
           <div className="flex items-center space-x-3">
-            <h2 className="text-2xl font-black text-white tracking-tight">Strategy Settings</h2>
+            <h2 className="text-2xl font-semibold text-txt-primary tracking-tight">Strategy Settings</h2>
             <span
               className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
                 strategy.status === 'ACTIVE'
-                  ? 'bg-[#9de600]/15 text-[#9de600] border-[#9de600]/30'
+                  ? 'bg-brand/15 text-brand border-brand/30'
                   : 'bg-amber-400/10 text-amber-300 border-amber-400/30'
               }`}
             >
-              <span className={`w-2 h-2 rounded-full ${strategy.status === 'ACTIVE' ? 'bg-[#9de600] animate-pulse' : 'bg-amber-400'}`} />
+              <span className={`w-2 h-2 rounded-full ${strategy.status === 'ACTIVE' ? 'bg-brand animate-pulse' : 'bg-amber-400'}`} />
               <span>{strategy.status === 'ACTIVE' ? 'Engine Running' : 'Engine Paused'}</span>
             </span>
           </div>
-          <p className="text-xs text-[#85888e] mt-1.5">
+          <p className="text-xs text-txt-muted mt-1.5">
             Automated Covered Call execution parameters, multi-frequency calendar scheduler, and risk controls.
           </p>
         </div>
@@ -211,7 +210,7 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
           onClick={handleToggle}
           className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center space-x-2 transition ${
             strategy.status === 'ACTIVE'
-              ? 'bg-[#1a1e26] hover:bg-[#22262f] text-amber-400 border border-amber-400/30'
+              ? 'bg-surface-elevated hover:bg-surface-border text-amber-400 border border-amber-400/30'
               : 'btn-mirror-primary'
           }`}
         >
@@ -222,8 +221,8 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
 
       {/* Ticker Selector Bar */}
       {strategies && strategies.length > 1 && (
-        <div className="flex items-center space-x-2 bg-[#13161b] border border-[#22262f] p-2 rounded-2xl">
-          <span className="text-xs font-bold uppercase tracking-wider text-[#85888e] px-3">
+        <div className="flex items-center space-x-2 bg-surface-card border border-surface-border p-2 rounded-2xl">
+          <span className="text-xs font-bold uppercase tracking-wider text-txt-muted px-3">
             Selected Pair:
           </span>
           <div className="flex items-center space-x-2">
@@ -235,12 +234,12 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
                   onClick={() => onSelectStrategy && onSelectStrategy(s.id)}
                   className={`flex items-center space-x-2 px-4 py-1.5 rounded-xl text-xs font-bold transition ${
                     isSelected
-                      ? 'bg-[#9de600]/15 text-[#9de600] border border-[#9de600]/40 shadow-sm shadow-[#9de600]/10'
-                      : 'bg-[#1a1e26] text-[#cecfd2] hover:text-white hover:bg-[#22262f] border border-[#22262f]'
+                      ? 'bg-brand/15 text-brand border border-brand/40'
+                      : 'bg-surface-elevated text-txt-secondary hover:text-txt-primary hover:bg-surface-border border border-surface-border'
                   }`}
                 >
                   <span>{s.symbol || s.name}</span>
-                  <span className={`w-1.5 h-1.5 rounded-full ${s.status === 'ACTIVE' ? 'bg-[#9de600] animate-pulse' : 'bg-[#61656c]'}`} />
+                  <span className={`w-1.5 h-1.5 rounded-full ${s.status === 'ACTIVE' ? 'bg-brand animate-pulse' : 'bg-txt-dim'}`} />
                 </button>
               );
             })}
@@ -254,22 +253,21 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
         <form onSubmit={handleSave} className="lg:col-span-7 space-y-6">
           {/* Card 1: Broker Routing */}
           <div className="mirror-card p-6 space-y-4 relative overflow-hidden">
-            <div className="stat-hover-line" />
-            <div className="flex items-center space-x-2 border-b border-[#22262f] pb-3">
-              <Wallet className="w-4 h-4 text-[#9de600]" />
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+            <div className="flex items-center space-x-2 border-b border-surface-border pb-3">
+              <Wallet className="w-4 h-4 text-brand" />
+              <h3 className="text-sm font-bold text-txt-primary uppercase tracking-wider">
                 1. Broker Routing &amp; Account
               </h3>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#cecfd2] mb-1.5">
+              <label className="block text-xs font-semibold text-txt-secondary mb-1.5">
                 Execute On Broker Account
               </label>
               <select
                 value={selectedBrokerId}
                 onChange={(e) => setSelectedBrokerId(e.target.value)}
-                className="w-full bg-[#0c0e12] border border-[#22262f] focus:border-[#9de600] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none transition"
+                className="w-full bg-surface-base border border-surface-border focus:border-brand rounded-xl px-4 py-2.5 text-sm text-txt-primary focus:outline-none transition"
               >
                 {brokers.map((b) => (
                   <option key={b.id} value={b.id}>
@@ -281,9 +279,9 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
                 )}
               </select>
               {selectedBroker && (
-                <div className="mt-2.5 flex items-center justify-between text-xs text-[#85888e] bg-[#0c0e12] px-3.5 py-2 rounded-xl border border-[#22262f]">
+                <div className="mt-2.5 flex items-center justify-between text-xs text-txt-muted bg-surface-base px-3.5 py-2 rounded-xl border border-surface-border">
                   <span>Available Balance:</span>
-                  <span className="font-mono font-bold text-[#9de600]">
+                  <span className="font-mono font-bold text-brand">
                     ${selectedBroker.balanceUsd.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD
                   </span>
                 </div>
@@ -293,21 +291,20 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
 
           {/* Card 2: Margin Mode Configuration */}
           <div className="mirror-card p-6 space-y-4 relative overflow-hidden">
-            <div className="stat-hover-line" />
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#22262f] pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-surface-border pb-3">
               <div className="flex items-center space-x-2">
-                <Shield className="w-4 h-4 text-[#9de600]" />
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                <Shield className="w-4 h-4 text-brand" />
+                <h3 className="text-sm font-bold text-txt-primary uppercase tracking-wider">
                   2. Margin Mode Configuration
                 </h3>
               </div>
-              <span className="text-[11px] font-mono font-bold text-[#9de600] bg-[#9de600]/10 px-2.5 py-1 rounded-md border border-[#9de600]/30 uppercase">
+              <span className="text-[11px] font-mono font-bold text-brand bg-brand/10 px-2.5 py-1 rounded-md border border-brand/30 uppercase">
                 {marginMode} Margin Mode
               </span>
             </div>
 
             <div className="space-y-3">
-              <label className="block text-xs font-semibold text-[#cecfd2]">
+              <label className="block text-xs font-semibold text-txt-secondary">
                 Select Margin Calculation Mode
               </label>
 
@@ -340,36 +337,36 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
                       onClick={() => setMarginMode(mode.id as 'PORTFOLIO' | 'ISOLATED' | 'CROSS')}
                       className={`p-3.5 rounded-xl text-left transition border flex flex-col justify-between ${
                         isSelected
-                          ? 'bg-[#9de600]/15 border-[#9de600]/40 shadow-sm shadow-[#9de600]/10'
-                          : 'bg-[#0c0e12] border-[#22262f] hover:border-[#373a41]'
+                          ? 'bg-brand/15 border-brand/40'
+                          : 'bg-surface-base border-surface-border hover:border-surface-borderLight'
                       }`}
                     >
                       <div>
                         <div className="flex items-center justify-between">
-                          <span className={`text-xs font-bold ${isSelected ? 'text-[#9de600]' : 'text-white'}`}>
+                          <span className={`text-xs font-bold ${isSelected ? 'text-brand' : 'text-txt-primary'}`}>
                             {mode.title}
                           </span>
                           <span
                             className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${
                               mode.id === 'PORTFOLIO'
-                                ? 'bg-[#9de600]/20 text-[#9de600] font-bold'
-                                : 'bg-[#1a1e26] text-[#85888e]'
+                                ? 'bg-brand/20 text-brand font-bold'
+                                : 'bg-surface-elevated text-txt-muted'
                             }`}
                           >
                             {mode.badge}
                           </span>
                         </div>
-                        <p className="text-[11px] text-[#85888e] mt-1.5 leading-relaxed">
+                        <p className="text-[11px] text-txt-muted mt-1.5 leading-relaxed">
                           {mode.desc}
                         </p>
                       </div>
                       <div className="mt-3 flex items-center space-x-1.5">
                         <span
                           className={`w-2 h-2 rounded-full ${
-                            isSelected ? 'bg-[#9de600]' : 'bg-[#22262f]'
+                            isSelected ? 'bg-brand' : 'bg-surface-border'
                           }`}
                         />
-                        <span className={`text-[10px] font-mono ${isSelected ? 'text-[#9de600] font-bold' : 'text-[#61656c]'}`}>
+                        <span className={`text-[10px] font-mono ${isSelected ? 'text-brand font-bold' : 'text-txt-dim'}`}>
                           {isSelected ? 'ACTIVE' : 'SELECT'}
                         </span>
                       </div>
@@ -379,10 +376,10 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
               </div>
 
               {marginMode === 'PORTFOLIO' && (
-                <div className="p-3 bg-[#9de600]/10 border border-[#9de600]/25 rounded-xl text-xs text-[#d0f280] flex items-start space-x-2.5">
-                  <Info className="w-4 h-4 text-[#9de600] shrink-0 mt-0.5" />
+                <div className="p-3 bg-brand/10 border border-brand/25 rounded-xl text-xs text-[#d0f280] flex items-start space-x-2.5">
+                  <Info className="w-4 h-4 text-brand shrink-0 mt-0.5" />
                   <div className="leading-relaxed">
-                    <strong className="text-white">Portfolio Margin Active:</strong> Delta Exchange will hedge your long futures against your short calls. All orders placed by the strategy will specify <code className="text-white font-mono font-bold bg-[#0c0e12] px-1 py-0.5 rounded border border-[#9de600]/30">margin_mode: portfolio</code>.
+                    <strong className="text-txt-primary">Portfolio Margin Active:</strong> Delta Exchange will hedge your long futures against your short calls. All orders placed by the strategy will specify <code className="text-txt-primary font-mono font-bold bg-surface-base px-1 py-0.5 rounded border border-brand/30">margin_mode: portfolio</code>.
                   </div>
                 </div>
               )}
@@ -391,7 +388,7 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
                 <div className="p-3 bg-amber-400/10 border border-amber-400/25 rounded-xl text-xs text-amber-200 flex items-start space-x-2.5">
                   <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                   <div className="leading-relaxed">
-                    <strong className="text-white">Isolated Margin Notice:</strong> Each contract leg will lock separate collateral. Ensure your account has sufficient available USD balance to satisfy isolated margin requirements for short calls.
+                    <strong className="text-txt-primary">Isolated Margin Notice:</strong> Each contract leg will lock separate collateral. Ensure your account has sufficient available USD balance to satisfy isolated margin requirements for short calls.
                   </div>
                 </div>
               )}
@@ -400,15 +397,14 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
 
           {/* Card 3: Date Calendar & Execution Frequency */}
           <div className="mirror-card p-6 space-y-4 relative overflow-hidden">
-            <div className="stat-hover-line" />
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#22262f] pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-surface-border pb-3">
               <div className="flex items-center space-x-2">
-                <Calendar className="w-4 h-4 text-[#9de600]" />
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                <Calendar className="w-4 h-4 text-brand" />
+                <h3 className="text-sm font-bold text-txt-primary uppercase tracking-wider">
                   3. Execution Schedule &amp; Frequency
                 </h3>
               </div>
-              <span className="text-[11px] font-mono font-bold text-[#9de600] bg-[#9de600]/10 px-2.5 py-1 rounded-md border border-[#9de600]/30">
+              <span className="text-[11px] font-mono font-bold text-brand bg-brand/10 px-2.5 py-1 rounded-md border border-brand/30">
                 {getScheduleDescription()}
               </span>
             </div>
@@ -416,7 +412,7 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
             <div className="space-y-4">
               {/* Frequency Selector Pills */}
               <div>
-                <label className="block text-xs font-semibold text-[#cecfd2] mb-1.5">
+                <label className="block text-xs font-semibold text-txt-secondary mb-1.5">
                   Execution Frequency
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -437,14 +433,14 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
                       }}
                       className={`p-2.5 rounded-xl text-left transition border ${
                         frequency === item.id
-                          ? 'bg-[#9de600]/15 border-[#9de600]/40 shadow-sm shadow-[#9de600]/10'
-                          : 'bg-[#0c0e12] border-[#22262f] hover:border-[#373a41]'
+                          ? 'bg-brand/15 border-brand/40'
+                          : 'bg-surface-base border-surface-border hover:border-surface-borderLight'
                       }`}
                     >
-                      <div className={`text-xs font-bold ${frequency === item.id ? 'text-[#9de600]' : 'text-white'}`}>
+                      <div className={`text-xs font-bold ${frequency === item.id ? 'text-brand' : 'text-txt-primary'}`}>
                         {item.label}
                       </div>
-                      <div className="text-[10px] text-[#85888e] mt-0.5">{item.desc}</div>
+                      <div className="text-[10px] text-txt-muted mt-0.5">{item.desc}</div>
                     </button>
                   ))}
                 </div>
@@ -454,8 +450,8 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                 {/* Calendar Date Picker */}
                 <div>
-                  <label className="block text-xs font-semibold text-[#cecfd2] mb-1.5 flex items-center space-x-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-[#9de600]" />
+                  <label className="block text-xs font-semibold text-txt-secondary mb-1.5 flex items-center space-x-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-brand" />
                     <span>Calendar Start Date</span>
                   </label>
                   <input
@@ -463,9 +459,9 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
                     required
-                    className="w-full bg-[#0c0e12] border border-[#22262f] focus:border-[#9de600] rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none transition"
+                    className="w-full bg-surface-base border border-surface-border focus:border-brand rounded-xl px-4 py-2.5 text-sm text-txt-primary font-mono focus:outline-none transition"
                   />
-                  <p className="text-[11px] text-[#85888e] mt-1">
+                  <p className="text-[11px] text-txt-muted mt-1">
                     Strategy schedule begins on this date.
                   </p>
                 </div>
@@ -473,8 +469,8 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
                 {/* Routine Time Picker (for Daily & Every N Days) */}
                 {(frequency === 'DAILY' || frequency === 'EVERY_N_DAYS') && (
                   <div>
-                    <label className="block text-xs font-semibold text-[#cecfd2] mb-1.5 flex items-center space-x-1.5">
-                      <Clock className="w-3.5 h-3.5 text-[#9de600]" />
+                    <label className="block text-xs font-semibold text-txt-secondary mb-1.5 flex items-center space-x-1.5">
+                      <Clock className="w-3.5 h-3.5 text-brand" />
                       <span>Execution Time (IST)</span>
                     </label>
                     <input
@@ -482,7 +478,7 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
                       value={routineTime}
                       onChange={(e) => setRoutineTime(e.target.value)}
                       required
-                      className="w-full bg-[#0c0e12] border border-[#22262f] focus:border-[#9de600] rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none transition"
+                      className="w-full bg-surface-base border border-surface-border focus:border-brand rounded-xl px-4 py-2.5 text-sm text-txt-primary font-mono focus:outline-none transition"
                     />
                     <div className="flex flex-wrap items-center gap-1.5 mt-2">
                       {[
@@ -497,8 +493,8 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
                           onClick={() => setRoutineTime(preset.time)}
                           className={`px-2 py-1 rounded-lg text-[10px] font-mono font-bold transition border ${
                             routineTime === preset.time
-                              ? 'bg-[#9de600]/20 text-[#9de600] border-[#9de600]/40'
-                              : 'bg-[#0c0e12] text-[#85888e] border-[#22262f] hover:text-white'
+                              ? 'bg-brand/20 text-brand border-brand/40'
+                              : 'bg-surface-base text-txt-muted border-surface-border hover:text-txt-primary'
                           }`}
                         >
                           {preset.label}
@@ -511,7 +507,7 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
                 {/* Day Interval for EVERY_N_DAYS */}
                 {frequency === 'EVERY_N_DAYS' && (
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-semibold text-[#cecfd2] mb-1.5">
+                    <label className="block text-xs font-semibold text-txt-secondary mb-1.5">
                       Day Interval (Run every N days)
                     </label>
                     <div className="flex flex-wrap items-center gap-2">
@@ -521,9 +517,9 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
                         max="90"
                         value={intervalValue}
                         onChange={(e) => setIntervalValue(Math.max(1, Number(e.target.value)))}
-                        className="w-28 bg-[#0c0e12] border border-[#22262f] focus:border-[#9de600] rounded-xl px-4 py-2 text-sm text-white font-mono focus:outline-none transition"
+                        className="w-28 bg-surface-base border border-surface-border focus:border-brand rounded-xl px-4 py-2 text-sm text-txt-primary font-mono focus:outline-none transition"
                       />
-                      <span className="text-xs text-[#cecfd2] font-semibold">Days</span>
+                      <span className="text-xs text-txt-secondary font-semibold">Days</span>
                       {[2, 3, 5, 7].map((d) => (
                         <button
                           key={d}
@@ -531,8 +527,8 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
                           onClick={() => setIntervalValue(d)}
                           className={`px-3 py-2 rounded-xl text-xs font-mono font-bold transition border ${
                             intervalValue === d
-                              ? 'bg-[#9de600]/20 text-[#9de600] border-[#9de600]/40'
-                              : 'bg-[#0c0e12] text-[#85888e] border-[#22262f] hover:text-white'
+                              ? 'bg-brand/20 text-brand border-brand/40'
+                              : 'bg-surface-base text-txt-muted border-surface-border hover:text-txt-primary'
                           }`}
                         >
                           Every {d} Days
@@ -545,7 +541,7 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
                 {/* Hour Interval for HOURLY */}
                 {frequency === 'HOURLY' && (
                   <div>
-                    <label className="block text-xs font-semibold text-[#cecfd2] mb-1.5">
+                    <label className="block text-xs font-semibold text-txt-secondary mb-1.5">
                       Hour Interval
                     </label>
                     <div className="flex flex-wrap items-center gap-2">
@@ -555,9 +551,9 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
                         max="24"
                         value={intervalValue}
                         onChange={(e) => setIntervalValue(Math.max(1, Number(e.target.value)))}
-                        className="w-28 bg-[#0c0e12] border border-[#22262f] focus:border-[#9de600] rounded-xl px-4 py-2 text-sm text-white font-mono focus:outline-none transition"
+                        className="w-28 bg-surface-base border border-surface-border focus:border-brand rounded-xl px-4 py-2 text-sm text-txt-primary font-mono focus:outline-none transition"
                       />
-                      <span className="text-xs text-[#cecfd2] font-semibold">Hour(s)</span>
+                      <span className="text-xs text-txt-secondary font-semibold">Hour(s)</span>
                       {[1, 2, 4, 6].map((h) => (
                         <button
                           key={h}
@@ -565,8 +561,8 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
                           onClick={() => setIntervalValue(h)}
                           className={`px-3 py-2 rounded-xl text-xs font-mono font-bold transition border ${
                             intervalValue === h
-                              ? 'bg-[#9de600]/20 text-[#9de600] border-[#9de600]/40'
-                              : 'bg-[#0c0e12] text-[#85888e] border-[#22262f] hover:text-white'
+                              ? 'bg-brand/20 text-brand border-brand/40'
+                              : 'bg-surface-base text-txt-muted border-surface-border hover:text-txt-primary'
                           }`}
                         >
                           Every {h}h
@@ -579,7 +575,7 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
                 {/* Minute Interval for MINUTES */}
                 {frequency === 'MINUTES' && (
                   <div>
-                    <label className="block text-xs font-semibold text-[#cecfd2] mb-1.5">
+                    <label className="block text-xs font-semibold text-txt-secondary mb-1.5">
                       Minute Interval
                     </label>
                     <div className="flex flex-wrap items-center gap-2">
@@ -589,9 +585,9 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
                         max="60"
                         value={intervalValue}
                         onChange={(e) => setIntervalValue(Math.max(1, Number(e.target.value)))}
-                        className="w-28 bg-[#0c0e12] border border-[#22262f] focus:border-[#9de600] rounded-xl px-4 py-2 text-sm text-white font-mono focus:outline-none transition"
+                        className="w-28 bg-surface-base border border-surface-border focus:border-brand rounded-xl px-4 py-2 text-sm text-txt-primary font-mono focus:outline-none transition"
                       />
-                      <span className="text-xs text-[#cecfd2] font-semibold">Mins</span>
+                      <span className="text-xs text-txt-secondary font-semibold">Mins</span>
                       {[1, 5, 15, 30].map((m) => (
                         <button
                           key={m}
@@ -599,8 +595,8 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
                           onClick={() => setIntervalValue(m)}
                           className={`px-3 py-2 rounded-xl text-xs font-mono font-bold transition border ${
                             intervalValue === m
-                              ? 'bg-[#9de600]/20 text-[#9de600] border-[#9de600]/40'
-                              : 'bg-[#0c0e12] text-[#85888e] border-[#22262f] hover:text-white'
+                              ? 'bg-brand/20 text-brand border-brand/40'
+                              : 'bg-surface-base text-txt-muted border-surface-border hover:text-txt-primary'
                           }`}
                         >
                           Every {m}m
@@ -615,10 +611,9 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
 
           {/* Card 4: Position Sizing & Lots */}
           <div className="mirror-card p-6 space-y-4 relative overflow-hidden">
-            <div className="stat-hover-line" />
-            <div className="flex items-center space-x-2 border-b border-[#22262f] pb-3">
-              <Layers className="w-4 h-4 text-[#9de600]" />
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+            <div className="flex items-center space-x-2 border-b border-surface-border pb-3">
+              <Layers className="w-4 h-4 text-brand" />
+              <h3 className="text-sm font-bold text-txt-primary uppercase tracking-wider">
                 4. Position Sizing (Lots per Tranche)
               </h3>
             </div>
@@ -626,10 +621,10 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
             <div className="space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-semibold text-[#cecfd2]">
+                  <label className="text-xs font-semibold text-txt-secondary">
                     Future Contract Size (Tranche)
                   </label>
-                  <span className="text-[11px] text-[#85888e] font-mono">
+                  <span className="text-[11px] text-txt-muted font-mono">
                     1 Contract = {contractMultiplier}
                   </span>
                 </div>
@@ -642,7 +637,7 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
                     value={futureLots}
                     onChange={(e) => setFutureLots(Number(e.target.value))}
                     required
-                    className="flex-1 bg-[#0c0e12] border border-[#22262f] focus:border-[#9de600] rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none transition"
+                    className="flex-1 bg-surface-base border border-surface-border focus:border-brand rounded-xl px-4 py-2.5 text-sm text-txt-primary font-mono focus:outline-none transition"
                   />
                   {[1, 2, 5, 10].map((preset) => (
                     <button
@@ -651,25 +646,25 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
                       onClick={() => setFutureLots(preset)}
                       className={`px-3 py-2.5 rounded-xl text-xs font-mono font-bold transition border ${
                         futureLots === preset
-                          ? 'bg-[#9de600]/20 text-[#9de600] border-[#9de600]/40'
-                          : 'bg-[#0c0e12] text-[#85888e] border-[#22262f] hover:text-white'
+                          ? 'bg-brand/20 text-brand border-brand/40'
+                          : 'bg-surface-base text-txt-muted border-surface-border hover:text-txt-primary'
                       }`}
                     >
                       {preset}
                     </button>
                   ))}
                 </div>
-                <p className="text-[11px] text-[#85888e] mt-1.5">
+                <p className="text-[11px] text-txt-muted mt-1.5">
                   Number of future contracts bought per scheduled routine.
                 </p>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-semibold text-[#cecfd2]">
+                  <label className="text-xs font-semibold text-txt-secondary">
                     Short Call Option Size
                   </label>
-                  <span className="text-[11px] text-[#85888e] font-mono">
+                  <span className="text-[11px] text-txt-muted font-mono">
                     ATM Strike ({strikeInterval} step)
                   </span>
                 </div>
@@ -682,7 +677,7 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
                     value={optionLots}
                     onChange={(e) => setOptionLots(Number(e.target.value))}
                     required
-                    className="flex-1 bg-[#0c0e12] border border-[#22262f] focus:border-[#9de600] rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none transition"
+                    className="flex-1 bg-surface-base border border-surface-border focus:border-brand rounded-xl px-4 py-2.5 text-sm text-txt-primary font-mono focus:outline-none transition"
                   />
                   {[1, 2, 5, 10].map((preset) => (
                     <button
@@ -691,15 +686,15 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
                       onClick={() => setOptionLots(preset)}
                       className={`px-3 py-2.5 rounded-xl text-xs font-mono font-bold transition border ${
                         optionLots === preset
-                          ? 'bg-[#9de600]/20 text-[#9de600] border-[#9de600]/40'
-                          : 'bg-[#0c0e12] text-[#85888e] border-[#22262f] hover:text-white'
+                          ? 'bg-brand/20 text-brand border-brand/40'
+                          : 'bg-surface-base text-txt-muted border-surface-border hover:text-txt-primary'
                       }`}
                     >
                       {preset}
                     </button>
                   ))}
                 </div>
-                <p className="text-[11px] text-[#85888e] mt-1.5">
+                <p className="text-[11px] text-txt-muted mt-1.5">
                   Number of Next-Day ATM Call contracts sold to hedge the future leg.
                 </p>
               </div>
@@ -708,10 +703,9 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
 
           {/* Card 5: Profit Targets & Risk Parameters */}
           <div className="mirror-card p-6 space-y-4 relative overflow-hidden">
-            <div className="stat-hover-line" />
-            <div className="flex items-center space-x-2 border-b border-[#22262f] pb-3">
-              <Target className="w-4 h-4 text-[#9de600]" />
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+            <div className="flex items-center space-x-2 border-b border-surface-border pb-3">
+              <Target className="w-4 h-4 text-brand" />
+              <h3 className="text-sm font-bold text-txt-primary uppercase tracking-wider">
                 5. Profit Target &amp; Risk Parameters
               </h3>
             </div>
@@ -719,7 +713,7 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Profit Target */}
               <div>
-                <label className="block text-xs font-semibold text-[#cecfd2] mb-1.5">
+                <label className="block text-xs font-semibold text-txt-secondary mb-1.5">
                   Future Profit Target (% Gain)
                 </label>
                 <div className="flex items-center space-x-2">
@@ -731,9 +725,9 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
                       value={profitTarget}
                       onChange={(e) => setProfitTarget(Number(e.target.value))}
                       required
-                      className="w-full bg-[#0c0e12] border border-[#22262f] focus:border-[#9de600] rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none transition"
+                      className="w-full bg-surface-base border border-surface-border focus:border-brand rounded-xl px-4 py-2.5 text-sm text-txt-primary font-mono focus:outline-none transition"
                     />
-                    <span className="absolute right-4 top-2.5 text-xs text-[#85888e] font-bold">%</span>
+                    <span className="absolute right-4 top-2.5 text-xs text-txt-muted font-bold">%</span>
                   </div>
                   {[3, 4.5, 6].map((p) => (
                     <button
@@ -742,22 +736,22 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
                       onClick={() => setProfitTarget(p)}
                       className={`px-2.5 py-2.5 rounded-xl text-xs font-mono font-bold transition border ${
                         profitTarget === p
-                          ? 'bg-[#9de600]/20 text-[#9de600] border-[#9de600]/40'
-                          : 'bg-[#0c0e12] text-[#85888e] border-[#22262f] hover:text-white'
+                          ? 'bg-brand/20 text-brand border-brand/40'
+                          : 'bg-surface-base text-txt-muted border-surface-border hover:text-txt-primary'
                       }`}
                     >
                       {p}%
                     </button>
                   ))}
                 </div>
-                <p className="text-[11px] text-[#85888e] mt-1.5">
+                <p className="text-[11px] text-txt-muted mt-1.5">
                   Auto squares off both legs when future hits this gain.
                 </p>
               </div>
 
               {/* Stop Loss */}
               <div>
-                <label className="block text-xs font-semibold text-[#cecfd2] mb-1.5">
+                <label className="block text-xs font-semibold text-txt-secondary mb-1.5">
                   Safety Stop Loss (% Drawdown)
                 </label>
                 <div className="flex items-center space-x-2">
@@ -769,9 +763,9 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
                       value={stopLoss}
                       onChange={(e) => setStopLoss(Number(e.target.value))}
                       required
-                      className="w-full bg-[#0c0e12] border border-[#22262f] focus:border-[#9de600] rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none transition"
+                      className="w-full bg-surface-base border border-surface-border focus:border-brand rounded-xl px-4 py-2.5 text-sm text-txt-primary font-mono focus:outline-none transition"
                     />
-                    <span className="absolute right-4 top-2.5 text-xs text-[#85888e] font-bold">%</span>
+                    <span className="absolute right-4 top-2.5 text-xs text-txt-muted font-bold">%</span>
                   </div>
                   {[3, 5, 8].map((s) => (
                     <button
@@ -780,15 +774,15 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
                       onClick={() => setStopLoss(s)}
                       className={`px-2.5 py-2.5 rounded-xl text-xs font-mono font-bold transition border ${
                         stopLoss === s
-                          ? 'bg-[#f04438]/20 text-[#f04438] border-[#f04438]/40'
-                          : 'bg-[#0c0e12] text-[#85888e] border-[#22262f] hover:text-white'
+                          ? 'bg-danger/20 text-danger border-danger/40'
+                          : 'bg-surface-base text-txt-muted border-surface-border hover:text-txt-primary'
                       }`}
                     >
                       {s}%
                     </button>
                   ))}
                 </div>
-                <p className="text-[11px] text-[#85888e] mt-1.5">
+                <p className="text-[11px] text-txt-muted mt-1.5">
                   Emergency exit threshold if market crashes deeply.
                 </p>
               </div>
@@ -796,9 +790,9 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
 
             {/* Option Premium Decay */}
             <div className="pt-2">
-              <div className="flex items-center justify-between text-xs text-[#cecfd2] mb-1.5">
+              <div className="flex items-center justify-between text-xs text-txt-secondary mb-1.5">
                 <span className="font-semibold">Option Premium Decay Target</span>
-                <span className="font-mono text-[#9de600] font-bold">{optionDecay}% decay</span>
+                <span className="font-mono text-brand font-bold">{optionDecay}% decay</span>
               </div>
               <input
                 type="range"
@@ -807,9 +801,9 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
                 step="5"
                 value={optionDecay}
                 onChange={(e) => setOptionDecay(Number(e.target.value))}
-                className="w-full accent-[#9de600] cursor-pointer"
+                className="w-full accent-brand cursor-pointer"
               />
-              <div className="flex justify-between text-[10px] text-[#85888e] font-mono mt-1">
+              <div className="flex justify-between text-[10px] text-txt-muted font-mono mt-1">
                 <span>50% (Conservative)</span>
                 <span>80% (Recommended)</span>
                 <span>95% (Maximum)</span>
@@ -822,8 +816,8 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
             <div
               className={`p-4 rounded-xl border text-xs flex items-center space-x-2 ${
                 statusMsg.type === 'success'
-                  ? 'bg-[#9de600]/10 border-[#9de600]/30 text-[#9de600]'
-                  : 'bg-[#f04438]/10 border-[#f04438]/30 text-[#fda29b]'
+                  ? 'bg-brand/10 border-brand/30 text-brand'
+                  : 'bg-danger/10 border-danger/30 text-[#fda29b]'
               }`}
             >
               <CheckCircle2 className="w-4 h-4 shrink-0" />
@@ -835,12 +829,12 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
           <button
             type="submit"
             disabled={saving}
-            className="w-full btn-mirror-primary py-3.5 rounded-xl text-sm font-bold shadow-lg shadow-[#9de600]/20 transition flex items-center justify-center space-x-2"
+            className="w-full btn-mirror-primary py-3.5 rounded-xl text-sm font-bold transition flex items-center justify-center space-x-2"
           >
             {saving ? (
-              <RefreshCw className="w-4 h-4 animate-spin text-[#0c0e12]" />
+              <RefreshCw className="w-4 h-4 animate-spin text-surface-base" />
             ) : (
-              <Check className="w-4 h-4 text-[#0c0e12]" />
+              <Check className="w-4 h-4 text-surface-base" />
             )}
             <span>{saving ? 'Saving Changes...' : 'Save Strategy Settings'}</span>
           </button>
@@ -850,115 +844,113 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
         <div className="lg:col-span-5 space-y-6">
           {/* Card 1: Asset & Live Market Regime */}
           <div className="mirror-card p-6 space-y-4 relative overflow-hidden">
-            <div className="stat-hover-line" />
-            <div className="flex items-center justify-between border-b border-[#22262f] pb-3">
+            <div className="flex items-center justify-between border-b border-surface-border pb-3">
               <div className="flex items-center space-x-2">
-                <TrendingUp className="w-4 h-4 text-[#9de600]" />
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                <TrendingUp className="w-4 h-4 text-brand" />
+                <h3 className="text-sm font-bold text-txt-primary uppercase tracking-wider">
                   Live Market Regime
                 </h3>
               </div>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#0c0e12] text-[#85888e] border border-[#22262f]">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-surface-base text-txt-muted border border-surface-border">
                 4H Candle
               </span>
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="flex justify-between items-center py-1 border-b border-[#22262f]">
-                <span className="text-[#85888e]">Trading Symbol:</span>
-                <span className="font-bold text-white font-mono">{strategy.symbol}</span>
+              <div className="flex justify-between items-center py-1 border-b border-surface-border">
+                <span className="text-txt-muted">Trading Symbol:</span>
+                <span className="font-bold text-txt-primary font-mono">{strategy.symbol}</span>
               </div>
-              <div className="flex justify-between items-center py-1 border-b border-[#22262f]">
-                <span className="text-[#85888e]">Live Mark Price:</span>
-                <span className="font-bold text-[#9de600] font-mono text-sm">
+              <div className="flex justify-between items-center py-1 border-b border-surface-border">
+                <span className="text-txt-muted">Live Mark Price:</span>
+                <span className="font-bold text-brand font-mono text-sm">
                   ${currentPrice > 0 ? currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '---'}
                 </span>
               </div>
-              <div className="flex justify-between items-center py-1 border-b border-[#22262f]">
-                <span className="text-[#85888e]">Active Schedule:</span>
-                <span className="font-bold text-[#9de600] font-mono text-right max-w-[200px] truncate">
+              <div className="flex justify-between items-center py-1 border-b border-surface-border">
+                <span className="text-txt-muted">Active Schedule:</span>
+                <span className="font-bold text-brand font-mono text-right max-w-[200px] truncate">
                   {getScheduleDescription()}
                 </span>
               </div>
-              <div className="flex justify-between items-center py-1 border-b border-[#22262f]">
-                <span className="text-[#85888e]">Margin Mode:</span>
-                <span className="font-bold text-[#9de600] font-mono">{marginMode}</span>
+              <div className="flex justify-between items-center py-1 border-b border-surface-border">
+                <span className="text-txt-muted">Margin Mode:</span>
+                <span className="font-bold text-brand font-mono">{marginMode}</span>
               </div>
-              <div className="flex justify-between items-center py-1 border-b border-[#22262f]">
-                <span className="text-[#85888e]">Calendar Start:</span>
-                <span className="font-bold text-white font-mono">{startDate}</span>
+              <div className="flex justify-between items-center py-1 border-b border-surface-border">
+                <span className="text-txt-muted">Calendar Start:</span>
+                <span className="font-bold text-txt-primary font-mono">{startDate}</span>
               </div>
-              <div className="flex justify-between items-center py-1 border-b border-[#22262f]">
-                <span className="text-[#85888e]">4H Supertrend:</span>
-                <span className={`font-bold font-mono ${indicatorStatus?.trend === 'BEARISH' ? 'text-[#f04438]' : 'text-[#9de600]'}`}>
+              <div className="flex justify-between items-center py-1 border-b border-surface-border">
+                <span className="text-txt-muted">4H Supertrend:</span>
+                <span className={`font-bold font-mono ${indicatorStatus?.trend === 'BEARISH' ? 'text-danger' : 'text-brand'}`}>
                   {indicatorStatus?.trend || 'BULLISH (GREEN)'}
                 </span>
               </div>
-              <div className="flex justify-between items-center py-1 border-b border-[#22262f]">
-                <span className="text-[#85888e]">Contract Size:</span>
-                <span className="font-bold text-white font-mono">{contractMultiplier}</span>
+              <div className="flex justify-between items-center py-1 border-b border-surface-border">
+                <span className="text-txt-muted">Contract Size:</span>
+                <span className="font-bold text-txt-primary font-mono">{contractMultiplier}</span>
               </div>
               <div className="flex justify-between items-center py-1">
-                <span className="text-[#85888e]">Strike Interval:</span>
-                <span className="font-bold text-white font-mono">{strikeInterval}</span>
+                <span className="text-txt-muted">Strike Interval:</span>
+                <span className="font-bold text-txt-primary font-mono">{strikeInterval}</span>
               </div>
             </div>
           </div>
 
           {/* Card 2: Strategy Rules in Plain English */}
           <div className="mirror-card p-6 space-y-4 relative overflow-hidden">
-            <div className="stat-hover-line" />
-            <div className="flex items-center space-x-2 border-b border-[#22262f] pb-3">
-              <Info className="w-4 h-4 text-[#9de600]" />
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+            <div className="flex items-center space-x-2 border-b border-surface-border pb-3">
+              <Info className="w-4 h-4 text-brand" />
+              <h3 className="text-sm font-bold text-txt-primary uppercase tracking-wider">
                 Execution Rules Summary
               </h3>
             </div>
 
-            <div className="space-y-3.5 text-xs text-[#cecfd2]">
+            <div className="space-y-3.5 text-xs text-txt-secondary">
               <div className="flex items-start space-x-2.5">
-                <div className="w-5 h-5 rounded-full bg-[#9de600]/15 text-[#9de600] flex items-center justify-center shrink-0 font-bold text-[10px] mt-0.5">
+                <div className="w-5 h-5 rounded-full bg-brand/15 text-brand flex items-center justify-center shrink-0 font-bold text-[10px] mt-0.5">
                   1
                 </div>
                 <div>
-                  <strong className="text-white">Scheduled Trend Evaluation:</strong>
-                  <p className="text-[#85888e] text-[11px] mt-0.5">
+                  <strong className="text-txt-primary">Scheduled Trend Evaluation:</strong>
+                  <p className="text-txt-muted text-[11px] mt-0.5">
                     Evaluates market trend ({getScheduleDescription()}). If 4H Supertrend is bullish, buys {futureLots} lots Future and sells {optionLots} lots ATM Next-Day Call (5:30 PM expiry).
                   </p>
                 </div>
               </div>
 
               <div className="flex items-start space-x-2.5">
-                <div className="w-5 h-5 rounded-full bg-[#9de600]/15 text-[#9de600] flex items-center justify-center shrink-0 font-bold text-[10px] mt-0.5">
+                <div className="w-5 h-5 rounded-full bg-brand/15 text-brand flex items-center justify-center shrink-0 font-bold text-[10px] mt-0.5">
                   2
                 </div>
                 <div>
-                  <strong className="text-white">1% Dip Averaging:</strong>
-                  <p className="text-[#85888e] text-[11px] mt-0.5">
+                  <strong className="text-txt-primary">1% Dip Averaging:</strong>
+                  <p className="text-txt-muted text-[11px] mt-0.5">
                     If price drops ≥ 1% below initial entry strike during scheduled check, the engine enters the next tranche layer to lower average cost.
                   </p>
                 </div>
               </div>
 
               <div className="flex items-start space-x-2.5">
-                <div className="w-5 h-5 rounded-full bg-[#9de600]/15 text-[#9de600] flex items-center justify-center shrink-0 font-bold text-[10px] mt-0.5">
+                <div className="w-5 h-5 rounded-full bg-brand/15 text-brand flex items-center justify-center shrink-0 font-bold text-[10px] mt-0.5">
                   3
                 </div>
                 <div>
-                  <strong className="text-white">+{profitTarget}% Profit Exit:</strong>
-                  <p className="text-[#85888e] text-[11px] mt-0.5">
+                  <strong className="text-txt-primary">+{profitTarget}% Profit Exit:</strong>
+                  <p className="text-txt-muted text-[11px] mt-0.5">
                     When the future leg gains {profitTarget}%, both the future and short call positions are automatically closed for full profit.
                   </p>
                 </div>
               </div>
 
               <div className="flex items-start space-x-2.5">
-                <div className="w-5 h-5 rounded-full bg-[#9de600]/15 text-[#9de600] flex items-center justify-center shrink-0 font-bold text-[10px] mt-0.5">
+                <div className="w-5 h-5 rounded-full bg-brand/15 text-brand flex items-center justify-center shrink-0 font-bold text-[10px] mt-0.5">
                   4
                 </div>
                 <div>
-                  <strong className="text-white">Protective Option Roll:</strong>
-                  <p className="text-[#85888e] text-[11px] mt-0.5">
+                  <strong className="text-txt-primary">Protective Option Roll:</strong>
+                  <p className="text-txt-muted text-[11px] mt-0.5">
                     If future price breaches strike price, the engine automatically rolls the short call to next-day ATM strike to protect gains.
                   </p>
                 </div>
@@ -968,16 +960,15 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
 
           {/* Card 3: Current Strategy Stage */}
           <div className="mirror-card p-5 space-y-2 relative overflow-hidden">
-            <div className="stat-hover-line" />
             <div className="flex items-center justify-between text-xs">
-              <span className="text-[#85888e]">Current Engine Stage:</span>
-              <span className="px-2.5 py-0.5 rounded font-mono font-bold uppercase bg-[#9de600]/15 text-[#9de600] border border-[#9de600]/30">
+              <span className="text-txt-muted">Current Engine Stage:</span>
+              <span className="px-2.5 py-0.5 rounded font-mono font-bold uppercase bg-brand/15 text-brand border border-brand/30">
                 {stage}
               </span>
             </div>
             {strategy.state?.lastMessage && (
-              <p className="text-[11px] text-[#85888e] font-mono pt-1">
-                Last Event: <span className="text-white">{strategy.state.lastMessage}</span>
+              <p className="text-[11px] text-txt-muted font-mono pt-1">
+                Last Event: <span className="text-txt-primary">{strategy.state.lastMessage}</span>
               </p>
             )}
           </div>

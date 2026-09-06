@@ -1,0 +1,25 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./backend/.env
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Baked into the JS bundle at build time (Vite env vars aren't read at container start).
+        # Default matches this app's own default - only override if the backend is reachable at
+        # a different host/port than wherever the browser runs.
+        VITE_API_BASE: ${VITE_API_BASE:-http://localhost:3000}
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
