@@ -106,7 +106,7 @@ function AuthenticatedApp({ onLogout }: { onLogout: () => void }) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0c0e12] text-[#f7f7f7] flex flex-col font-sans selection:bg-[#9de600]/20 selection:text-[#9de600]">
+    <div className="min-h-screen bg-surface-base text-txt-primary flex flex-col font-sans selection:bg-brand/20 selection:text-brand">
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -153,11 +153,8 @@ function AuthenticatedApp({ onLogout }: { onLogout: () => void }) {
         )}
       </main>
 
-      <footer className="border-t border-[#22262f] py-6 text-center text-xs text-[#85888e] bg-[#0c0e12]">
-        <div className="flex items-center justify-center space-x-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#9de600] animate-pulse"></span>
-          <span>TradePulse PRO • Institutional Algorithmic Engine • Delta Multi-Broker Platform</span>
-        </div>
+      <footer className="border-t border-surface-border py-5 text-center text-xs text-txt-dim">
+        TradePulse — Algorithmic Trading Engine
       </footer>
     </div>
   );

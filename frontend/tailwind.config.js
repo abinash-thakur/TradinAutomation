@@ -39,18 +39,7 @@ export default {
         }
       },
       boxShadow: {
-        'lime': '0 0 20px rgba(157, 230, 0, 0.25)',
-        'lime-lg': '0 0 35px rgba(157, 230, 0, 0.35)',
-        'card': '0 4px 24px rgba(0, 0, 0, 0.45)',
-      },
-      animation: {
-        'marquee': 'marquee 25s linear infinite',
-      },
-      keyframes: {
-        marquee: {
-          '0%': { transform: 'translateX(0%)' },
-          '100%': { transform: 'translateX(-50%)' },
-        },
+        'card': '0 1px 2px rgba(0, 0, 0, 0.3)',
       },
     },
   },
