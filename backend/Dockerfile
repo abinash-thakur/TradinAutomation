@@ -9,11 +9,16 @@
 FROM node:22-slim AS base
 WORKDIR /app
 RUN corepack enable
-
-# ---- deps: install once with dev deps, needed to run `nest build` ----
-FROM base AS deps
 RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ \
     && rm -rf /var/lib/apt/lists/*
+
+# ---- deps: ONE install, with dev deps (needed to run `nest build`) ----
+# Deliberately not two separate `pnpm install` stages (one full, one --prod) - Docker runs
+# independent stages in parallel, so two installs fetch overlapping large packages (ccxt,
+# @swc/core's native binary) at the same time, competing for bandwidth for no reason. Instead
+# the production node_modules below is derived from this same install via `pnpm prune`, so
+# every dependency is only ever downloaded once.
+FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
@@ -22,12 +27,9 @@ FROM deps AS build
 COPY . .
 RUN pnpm build
 
-# ---- prod-deps: same install, production dependencies only (smaller final image) ----
-FROM base AS prod-deps
-RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ \
-    && rm -rf /var/lib/apt/lists/*
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN pnpm install --frozen-lockfile --prod
+# ---- prod-deps: strip dev-only packages from the already-installed node_modules ----
+FROM deps AS prod-deps
+RUN pnpm prune --prod
 
 # ---- runtime ----
 FROM node:22-slim AS runtime
