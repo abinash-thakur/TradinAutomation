@@ -2,7 +2,10 @@ import axios from 'axios';
 import type { BrokerAccount, Strategy, TradeLog, TickerSummary, BrokerAccountPositions, PositionInfo } from '../types';
 import { authStore } from './auth';
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3000';
+// `??` (not `||`) so an intentionally-empty VITE_API_BASE ("" - same origin, e.g. behind an
+// nginx reverse proxy that forwards /api to the backend) is honored rather than silently
+// overridden - only a genuinely *unset* var falls back to the direct-backend default.
+const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:3000';
 
 const client = axios.create({
   baseURL: API_BASE,

@@ -1,7 +1,10 @@
 import { io, Socket } from 'socket.io-client';
 import { authStore } from './auth';
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3000';
+// `??` (not `||`) so an intentionally-empty VITE_API_BASE ("" - same origin, e.g. behind an
+// nginx reverse proxy that forwards /socket.io to the backend) is honored rather than silently
+// overridden - only a genuinely *unset* var falls back to the direct-backend default.
+const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:3000';
 
 class SocketService {
   private socket: Socket | null = null;
@@ -10,7 +13,9 @@ class SocketService {
     if (!this.socket) {
       // StrategyGateway checks this handshake token itself (JwtAuthGuard only covers HTTP),
       // and disconnects immediately if it's missing or invalid.
-      this.socket = io(API_BASE, {
+      // socket.io-client treats "" as an actual (invalid) URL rather than "same origin" - pass
+      // undefined instead so it defaults to the page's own origin, same as an omitted argument.
+      this.socket = io(API_BASE || undefined, {
         transports: ['websocket', 'polling'],
         auth: { token: authStore.getToken() },
       });
