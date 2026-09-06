@@ -16,10 +16,7 @@ WORKDIR /app
 RUN corepack enable
 
 COPY package.json pnpm-lock.yaml ./
-# Cache mount: persists pnpm's store across build attempts on the host, so a build killed
-# partway (OOM, a dropped connection) doesn't force a full re-download from zero on retry.
-RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 COPY . .
 ARG VITE_API_BASE=http://localhost:3000
