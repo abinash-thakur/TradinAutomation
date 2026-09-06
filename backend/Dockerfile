@@ -20,7 +20,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 make g+
 # every dependency is only ever downloaded once.
 FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN pnpm install --frozen-lockfile
+# The cache mount persists pnpm's content-addressable store across build attempts, on the host,
+# independent of whether this RUN step ever finishes. Without it, a build killed partway through
+# (OOM, a dropped SSH session, anything) throws away every package it already downloaded - Docker
+# only commits a layer on success - so a retry re-downloads all ~900 packages from zero. With it,
+# a retry only fetches what's still missing.
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
 
 # ---- build: compile TypeScript -> dist/ ----
 FROM deps AS build
