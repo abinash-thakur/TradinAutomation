@@ -101,164 +101,6 @@ export class StrategyEngineService {
   }
 
   /**
-   * Finds every short Call held for this strategy's underlying that expires TODAY.
-   * Shared by getTriggerPreview() and closeExpiringTodayCalls() so the preview never
-   * disagrees with what execution actually does.
-   */
-  private async findExpiringTodayShortCalls(
-    strategy: Strategy,
-    adapter: IBrokerAdapter,
-  ): Promise<Array<{ symbol: string; productId?: string | number; size: number; markPrice: number }>> {
-    const symbol = strategy.symbol || 'BTCUSD';
-    const { underlying } = OptionsUtil.getUnderlyingAndStrikeInterval(symbol);
-
-    let expiring: Array<{ symbol: string; productId?: string | number; size: number; markPrice: number }> = [];
-
-    try {
-      const livePositions = await adapter.getPositions();
-      expiring = livePositions
-        .filter(
-          (p) =>
-            p.size !== 0 &&
-            p.side === 'sell' &&
-            !!p.symbol &&
-            p.symbol.toUpperCase().startsWith(`C-${underlying}-`) &&
-            this.isExpiringToday(p.symbol),
-        )
-        .map((p) => ({
-          symbol: p.symbol,
-          productId: p.productId,
-          size: Math.abs(p.size),
-          markPrice: p.markPrice || 0,
-        }));
-    } catch (e: any) {
-      this.logger.warn(`[${strategy.name}] Could not read live positions for expiry roll: ${e.message}`);
-    }
-
-    // Fallback to persisted state when the broker book could not be read
-    const statedOpt = strategy.state?.optionPosition;
-    if (
-      expiring.length === 0 &&
-      statedOpt &&
-      statedOpt.size > 0 &&
-      statedOpt.side === 'sell' &&
-      this.isExpiringToday(statedOpt.symbol, statedOpt.expiryDate)
-    ) {
-      expiring.push({
-        symbol: statedOpt.symbol,
-        productId: statedOpt.productId,
-        size: statedOpt.size,
-        markPrice: statedOpt.currentPremium || 0,
-      });
-    }
-
-    return expiring;
-  }
-
-  /**
-   * ROLL STEP - runs at every scheduled trigger, BEFORE tomorrow's Call is shorted.
-   *
-   * USER RULE (Option 1 - Square Off / Roll today's Call at 3:30 PM):
-   * "At 3:30 PM, before placing tomorrow's call, check if a short Call expiring today is held.
-   *  If yes, buy to close it (with ~2h left an OTM call is worth ~$0.10-$0.50), so the held Call
-   *  count becomes 0, then immediately short tomorrow's Call."
-   *
-   * Keeps the book at a strict 1 Future : 1 Short Call ratio and never requires extra margin.
-   * Failures here are deliberately non-fatal: the trigger continues, and today's expiring Call is
-   * excluded from covered-call coverage regardless, so tomorrow's Call can still be shorted.
-   */
-  private async closeExpiringTodayCalls(
-    strategy: Strategy,
-    adapter: IBrokerAdapter,
-    account: BrokerAccount,
-  ): Promise<{ closedLots: number; symbols: string[]; realizedPnl: number; message: string }> {
-    const result = { closedLots: 0, symbols: [] as string[], realizedPnl: 0, message: '' };
-
-    const expiring = await this.findExpiringTodayShortCalls(strategy, adapter);
-    if (expiring.length === 0) return result;
-
-    const statedOpt = strategy.state?.optionPosition;
-    const marginMode = this.getMarginMode(strategy);
-
-    for (const pos of expiring) {
-      this.logger.log(
-        `[${strategy.name}] Expiry roll: buying back ${pos.size} lot(s) of today's Call ${pos.symbol} (market) before shorting the next-day Call...`,
-      );
-
-      let closeOrder = await adapter.placeOrder({
-        symbol: pos.symbol,
-        productId: pos.productId,
-        side: 'buy',
-        orderType: 'market',
-        size: pos.size,
-        marginMode,
-      });
-
-      if (!closeOrder || closeOrder.status === 'rejected') {
-        this.logger.warn(
-          `[${strategy.name}] Expiry roll: buy-to-close rejected for ${pos.symbol} (${closeOrder?.message}). Trying closePosition fallback...`,
-        );
-        try {
-          const closed = await adapter.closePosition(pos.symbol, pos.productId);
-          if (!closed) throw new Error('closePosition returned false');
-        } catch (closeErr: any) {
-          this.logger.error(
-            `[${strategy.name}] Expiry roll: could not close ${pos.symbol}: ${closeErr.message}. Letting it expire instead.`,
-          );
-          await this.logTrade(strategy,
-            account.brokerType,
-            pos.symbol,
-            'ROLL_CLOSE_CALL_FAILED',
-            pos.markPrice,
-            pos.size,
-            `Expiry roll failed for today's Call ${pos.symbol}: ${closeErr.message}. Position left to expire; next-day Call sell continues.`,
-          );
-          continue;
-        }
-        closeOrder = null as any;
-      }
-
-      const exitPremium = (closeOrder?.averagePrice || 0) > 0 ? closeOrder!.averagePrice : pos.markPrice;
-      const entryPremium = statedOpt && statedOpt.symbol === pos.symbol ? statedOpt.entryPremium : 0;
-      const legPnl = entryPremium > 0 ? (entryPremium - exitPremium) * pos.size : 0;
-
-      result.closedLots += pos.size;
-      result.symbols.push(pos.symbol);
-      result.realizedPnl += legPnl;
-
-      await this.logTrade(strategy,
-        account.brokerType,
-        pos.symbol,
-        'ROLL_CLOSE_EXPIRING_CALL',
-        exitPremium,
-        pos.size,
-        `Expiry roll: bought back ${pos.size} lot(s) of today's Call ${pos.symbol} @ $${exitPremium.toFixed(2)}` +
-          (entryPremium > 0
-            ? ` (entry $${entryPremium.toFixed(2)}, realized $${legPnl.toFixed(2)})`
-            : '') +
-          `. Held Call count is now 0 - free to short the next-day Call at a 1:1 ratio.`,
-      );
-    }
-
-    if (result.closedLots > 0 && strategy.state) {
-      if (statedOpt && this.isExpiringToday(statedOpt.symbol, statedOpt.expiryDate)) {
-        strategy.state.lastRollCount = (statedOpt.rollCount || 0) + 1;
-        strategy.state.optionPosition = null;
-      }
-      strategy.state.totalRealizedPnl = (strategy.state.totalRealizedPnl || 0) + result.realizedPnl;
-
-      result.message =
-        `Rolled out of ${result.closedLots} lot(s) of today's expiring Call (${result.symbols.join(', ')})` +
-        (result.realizedPnl !== 0 ? ` for $${result.realizedPnl.toFixed(2)} realized` : '') +
-        `.`;
-      this.logger.log(`[${strategy.name}] ${result.message}`);
-      await this.strategyRepo.save(strategy);
-    }
-
-    return result;
-  }
-
-  /**
    * Core scheduled trigger evaluation at 3:30 PM IST every day (or manual trigger from UI)
    *
    * USER RULES:
@@ -299,12 +141,6 @@ export class StrategyEngineService {
     const otmCall = OptionsUtil.findNearestOtmCall(chain, currentMark, expiry.codeString);
 
     const { isBullish, trend } = await this.determineMarketRegime(adapter, symbol);
-
-    // Mirrors the ROLL STEP in evaluateStrategyTrigger: today's short Call is bought back first.
-    const expiringCalls = await this.findExpiringTodayShortCalls(strategy, adapter);
-    const expiringCallLots = expiringCalls.reduce((sum, c) => sum + c.size, 0);
-    const expiringCallSymbols = expiringCalls.map((c) => c.symbol);
-    const expiringCallExitCost = expiringCalls.reduce((sum, c) => sum + c.markPrice * c.size, 0);
 
     const hasFuture = !!strategy.state?.futurePosition && strategy.state.futurePosition.size > 0;
     const configFutureLots = strategy.legsConfig?.futureLeg?.size || 2;
@@ -390,20 +226,9 @@ export class StrategyEngineService {
       }
     }
 
-    if (expiringCallLots > 0) {
-      reasonText =
-        `Roll: buying back ${expiringCallLots} lot(s) of today's expiring Call (${expiringCallSymbols.join(', ')}) ` +
-        `at ~$${expiringCallExitCost.toFixed(2)} total first, so held Calls drop to 0. ` +
-        reasonText;
-    }
-
     return {
       strategyId: strategy.id,
       strategyName: strategy.name,
-      willCloseExpiringCall: expiringCallLots > 0,
-      expiringCallSymbols,
-      expiringCallLots,
-      expiringCallExitCost,
       symbol,
       underlying,
       currentMark,
@@ -471,20 +296,6 @@ export class StrategyEngineService {
         };
       }
       strategy.state.marketRegime = isBullish ? 'BULLISH' : 'NOT_BULLISH';
-
-      // ROLL STEP: square off any short Call expiring TODAY before tomorrow's Call is shorted.
-      // Resets the held Call count to 0 so a strict 1 Future : 1 Short Call ratio can be re-established.
-      let rollMessage = '';
-      try {
-        const rolled = await this.closeExpiringTodayCalls(strategy, adapter, account);
-        if (rolled.closedLots > 0) {
-          rollMessage = `${rolled.message} `;
-        }
-      } catch (rollErr: any) {
-        this.logger.error(
-          `[${strategy.name}] Expiry roll step failed: ${rollErr.message}. Continuing with the trigger.`,
-        );
-      }
 
       const hasFuture = !!strategy.state.futurePosition && strategy.state.futurePosition.size > 0;
 
@@ -555,14 +366,6 @@ export class StrategyEngineService {
             drawdownPercent,
             opts,
           );
-        }
-      }
-
-      if (rollMessage) {
-        resultMessage = rollMessage + resultMessage;
-        if (strategy.state) {
-          strategy.state.lastMessage = rollMessage + (strategy.state.lastMessage || '');
-          await this.strategyRepo.save(strategy);
         }
       }
 
@@ -1063,10 +866,11 @@ export class StrategyEngineService {
    * 1. If next-day ATM strike matches the held Call option strike -> sell that ATM Call (do not go for OTM).
    * 2. If it does not match (or no existing call) -> sell the nearest OTM Call.
    *
-   * NOTE: Calls expiring TODAY never count as a held Call here - closeExpiringTodayCalls() rolls out
-   * of them at the start of every trigger. In the normal daily flow held Calls are therefore 0 by the
-   * time this runs, so case 2 (nearest OTM) applies. Case 1 still covers longer-dated (e.g. weekly)
-   * Calls and the fallback path where the roll could not fill.
+   * NOTE: Calls expiring TODAY never count as a held Call here - a call this close to expiry
+   * offers no forward coverage, so it's excluded from the ratio-cap count and the strike reference
+   * even though it's left open to expire naturally (this engine does not buy it back). That means
+   * a routine trigger can short a next-day Call while today's expiring Call is still on the book -
+   * the two coexist briefly until today's Call expires or is settled by the exchange.
    */
   private async executeRoutineCallSell(
     strategy: Strategy,
@@ -1700,7 +1504,6 @@ export class StrategyEngineService {
       'BUY_FUTURE_AVERAGING',
       'SELL_CALL_ATM_MATCH',
       'SELL_CALL_OTM',
-      'ROLL_CLOSE_EXPIRING_CALL',
     ]);
     if (ORDER_PLACED_ACTIONS.has(action)) {
       void this.email.notifyOrderPlaced({

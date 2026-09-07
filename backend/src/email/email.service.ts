@@ -14,7 +14,6 @@ const ACTION_LABELS: Record<string, string> = {
   BUY_FUTURE_AVERAGING: 'future averaging order filled',
   SELL_CALL_ATM_MATCH: 'call sell order filled',
   SELL_CALL_OTM: 'call sell order filled',
-  ROLL_CLOSE_EXPIRING_CALL: 'expiring call bought back',
 };
 
 /**

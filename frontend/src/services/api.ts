@@ -85,10 +85,6 @@ export const api = {
     client.get<{
       strategyId: string;
       strategyName: string;
-      willCloseExpiringCall: boolean;
-      expiringCallSymbols: string[];
-      expiringCallLots: number;
-      expiringCallExitCost: number;
       symbol: string;
       underlying: string;
       currentMark: number;
