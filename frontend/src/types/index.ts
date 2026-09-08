@@ -1,11 +1,10 @@
-export type BrokerType = 
-  | 'delta-india' 
-  | 'delta-global' 
-  | 'binance' 
-  | 'bybit' 
-  | 'deribit' 
-  | 'zerodha' 
-  | 'paper';
+export type BrokerType =
+  | 'delta-india'
+  | 'delta-global'
+  | 'binance'
+  | 'bybit'
+  | 'deribit'
+  | 'zerodha';
 
 export interface TickerSummary {
   symbol: string;

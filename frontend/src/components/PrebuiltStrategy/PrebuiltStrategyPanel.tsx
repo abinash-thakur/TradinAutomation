@@ -58,6 +58,14 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
   const [saving, setSaving] = useState<boolean>(false);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Deliberately keyed on strategy?.id, NOT the whole `strategy` object (and NOT `brokers`).
+  // A live `strategy-update` socket event arrives constantly - every scheduled trigger, every
+  // 10s monitor tick - and each one hands down a new `strategy` object reference even when
+  // nothing the user is editing actually changed. Depending on the whole object here meant this
+  // effect re-fired on every one of those broadcasts and silently reset every field below
+  // (broker selection included) back to the last-saved server value, discarding any in-progress
+  // edit before the user got to click Save. Keying on the id means this only re-initializes the
+  // form when the user switches to editing a genuinely different strategy.
   useEffect(() => {
     if (strategy) {
       setSelectedBrokerId(strategy.brokerAccountId || (brokers[0]?.id || ''));
@@ -74,7 +82,8 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
       setRoutineTime(triggerCfg?.time || '15:30');
       setIntervalValue(triggerCfg?.intervalValue || (triggerCfg?.frequency === 'EVERY_N_DAYS' ? 3 : 1));
     }
-  }, [strategy, brokers]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [strategy?.id]);
 
   if (!strategy) {
     return (
@@ -267,15 +276,17 @@ export const PrebuiltStrategyPanel: React.FC<PrebuiltStrategyPanelProps> = ({
               <select
                 value={selectedBrokerId}
                 onChange={(e) => setSelectedBrokerId(e.target.value)}
-                className="w-full bg-surface-base border border-surface-border focus:border-brand rounded-xl px-4 py-2.5 text-sm text-txt-primary focus:outline-none transition"
+                disabled={brokers.length === 0}
+                className="w-full bg-surface-base border border-surface-border focus:border-brand rounded-xl px-4 py-2.5 text-sm text-txt-primary focus:outline-none transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {brokers.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name} ({b.brokerType.toUpperCase()}) — ${b.balanceUsd.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                  </option>
-                ))}
-                {brokers.length === 0 && (
-                  <option value="">Paper Simulator (Zero Capital Risk)</option>
+                {brokers.length === 0 ? (
+                  <option value="">No broker connected — add one under Broker Accounts first</option>
+                ) : (
+                  brokers.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name} ({b.brokerType.toUpperCase()}) — ${b.balanceUsd.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </option>
+                  ))
                 )}
               </select>
               {selectedBroker && (

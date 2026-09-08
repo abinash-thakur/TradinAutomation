@@ -116,7 +116,6 @@ export const AddBrokerModal: React.FC<AddBrokerModalProps> = ({
             >
               <option value="delta-india">Delta Exchange India (api.india.delta.exchange)</option>
               <option value="delta-global">Delta Exchange Global (api.delta.exchange)</option>
-              <option value="paper">Paper Trading Simulator (Zero Capital Risk)</option>
               <option value="binance">Binance (Crypto Futures/Spot)</option>
               <option value="bybit">Bybit (Crypto Futures/Options)</option>
               <option value="deribit">Deribit (BTC Options & Futures)</option>
@@ -160,68 +159,64 @@ export const AddBrokerModal: React.FC<AddBrokerModalProps> = ({
             />
           </div>
 
-          {brokerType !== 'paper' && (
-            <>
-              <div>
-                <label className="block text-xs font-bold text-txt-secondary uppercase tracking-wider mb-1.5">
-                  API Key
-                </label>
-                <div className="relative">
-                  <Key className="w-4 h-4 absolute left-3.5 top-3 text-txt-muted" />
-                  <input
-                    type="text"
-                    placeholder="Enter API Key"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    required
-                    className="w-full bg-surface-base border border-surface-border rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-txt-primary focus:outline-none focus:border-brand font-mono transition"
-                  />
-                </div>
-              </div>
+          <div>
+            <label className="block text-xs font-bold text-txt-secondary uppercase tracking-wider mb-1.5">
+              API Key
+            </label>
+            <div className="relative">
+              <Key className="w-4 h-4 absolute left-3.5 top-3 text-txt-muted" />
+              <input
+                type="text"
+                placeholder="Enter API Key"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                required
+                className="w-full bg-surface-base border border-surface-border rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-txt-primary focus:outline-none focus:border-brand font-mono transition"
+              />
+            </div>
+          </div>
 
-              <div>
-                <label className="block text-xs font-bold text-txt-secondary uppercase tracking-wider mb-1.5">
-                  API Secret (Encrypted with AES-256)
-                </label>
-                <input
-                  type="password"
-                  placeholder="Enter API Secret"
-                  value={apiSecret}
-                  onChange={(e) => setApiSecret(e.target.value)}
-                  required
-                  className="w-full bg-surface-base border border-surface-border rounded-xl px-3.5 py-2.5 text-sm text-txt-primary focus:outline-none focus:border-brand font-mono transition"
-                />
-              </div>
+          <div>
+            <label className="block text-xs font-bold text-txt-secondary uppercase tracking-wider mb-1.5">
+              API Secret (Encrypted with AES-256)
+            </label>
+            <input
+              type="password"
+              placeholder="Enter API Secret"
+              value={apiSecret}
+              onChange={(e) => setApiSecret(e.target.value)}
+              required
+              className="w-full bg-surface-base border border-surface-border rounded-xl px-3.5 py-2.5 text-sm text-txt-primary focus:outline-none focus:border-brand font-mono transition"
+            />
+          </div>
 
-              {(brokerType === 'bybit' || brokerType === 'deribit') && (
-                <div>
-                  <label className="block text-xs font-bold text-txt-secondary uppercase tracking-wider mb-1.5">
-                    Passphrase (Optional)
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="Enter API Passphrase if required"
-                    value={passphrase}
-                    onChange={(e) => setPassphrase(e.target.value)}
-                    className="w-full bg-surface-base border border-surface-border rounded-xl px-3.5 py-2.5 text-sm text-txt-primary focus:outline-none focus:border-brand font-mono transition"
-                  />
-                </div>
-              )}
-
-              <div className="flex items-center space-x-2 pt-1">
-                <input
-                  type="checkbox"
-                  id="testnet"
-                  checked={isTestnet}
-                  onChange={(e) => setIsTestnet(e.target.checked)}
-                  className="rounded border-surface-border text-brand focus:ring-brand bg-surface-base"
-                />
-                <label htmlFor="testnet" className="text-xs text-txt-secondary select-none cursor-pointer">
-                  Connect to Testnet / Sandbox mode
-                </label>
-              </div>
-            </>
+          {(brokerType === 'bybit' || brokerType === 'deribit') && (
+            <div>
+              <label className="block text-xs font-bold text-txt-secondary uppercase tracking-wider mb-1.5">
+                Passphrase (Optional)
+              </label>
+              <input
+                type="password"
+                placeholder="Enter API Passphrase if required"
+                value={passphrase}
+                onChange={(e) => setPassphrase(e.target.value)}
+                className="w-full bg-surface-base border border-surface-border rounded-xl px-3.5 py-2.5 text-sm text-txt-primary focus:outline-none focus:border-brand font-mono transition"
+              />
+            </div>
           )}
+
+          <div className="flex items-center space-x-2 pt-1">
+            <input
+              type="checkbox"
+              id="testnet"
+              checked={isTestnet}
+              onChange={(e) => setIsTestnet(e.target.checked)}
+              className="rounded border-surface-border text-brand focus:ring-brand bg-surface-base"
+            />
+            <label htmlFor="testnet" className="text-xs text-txt-secondary select-none cursor-pointer">
+              Connect to Testnet / Sandbox mode
+            </label>
+          </div>
 
           {testResult && (
             <div

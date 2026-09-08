@@ -1,13 +1,12 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
-export type BrokerType = 
-  | 'delta-india' 
-  | 'delta-global' 
-  | 'binance' 
-  | 'bybit' 
-  | 'deribit' 
-  | 'zerodha' 
-  | 'paper';
+export type BrokerType =
+  | 'delta-india'
+  | 'delta-global'
+  | 'binance'
+  | 'bybit'
+  | 'deribit'
+  | 'zerodha';
 
 @Entity('broker_accounts')
 export class BrokerAccount {

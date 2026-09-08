@@ -437,7 +437,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   {broker?.name || 'Delta Exchange'}
                 </span>
               ) : (
-                <span className="text-txt-secondary font-medium">{broker?.name || 'Paper Simulator'}</span>
+                <span className="text-txt-secondary font-medium">{broker?.name || 'No broker connected'}</span>
               )}
             </span>
             <span className="text-txt-muted">Symbol <span className="text-txt-secondary font-medium font-mono">{strategy.symbol}</span></span>

@@ -20,24 +20,16 @@ export class DatabaseSeedService implements OnModuleInit {
   }
 
   private async seedDefaultData() {
-    // 1. Seed Paper Trading Broker Account if none exist
+    // 1. Seed a Delta Exchange template broker account if none exist. Credentials start empty
+    // (lastTestStatus: PENDING) - the user fills in real API keys before anything can actually
+    // trade. There is no paper/simulated broker: every account here is a real venue, and the
+    // factory throws rather than silently substituting one if a strategy's brokerAccountId ever
+    // doesn't resolve to a real, known broker type.
     const brokerCount = await this.brokerRepo.count();
     let defaultBroker: BrokerAccount;
 
     if (brokerCount === 0) {
-      this.logger.log('Seeding default Paper Trading Broker account...');
-      defaultBroker = this.brokerRepo.create({
-        name: 'Paper Trading Simulator (Virtual $100,000)',
-        brokerType: 'paper',
-        isTestnet: true,
-        isActive: true,
-        balanceUsd: 100000,
-        lastTestStatus: 'SUCCESS',
-        lastTestMessage: 'Ready for live paper trading',
-      });
-      defaultBroker = await this.brokerRepo.save(defaultBroker);
-
-      // Also create a sample Delta Exchange template account
+      this.logger.log('Seeding default Delta Exchange template broker account...');
       const deltaSample = this.brokerRepo.create({
         name: 'Delta Exchange India (Main)',
         brokerType: 'delta-india',
@@ -47,9 +39,9 @@ export class DatabaseSeedService implements OnModuleInit {
         lastTestStatus: 'PENDING',
         lastTestMessage: 'Awaiting API Key & Secret configuration',
       });
-      await this.brokerRepo.save(deltaSample);
+      defaultBroker = await this.brokerRepo.save(deltaSample);
     } else {
-      defaultBroker = (await this.brokerRepo.findOne({ where: { brokerType: 'paper' } })) || (await this.brokerRepo.find())[0];
+      defaultBroker = await this.brokerRepo.find().then((list) => list[0]);
     }
 
     // 2. Seed User's Covered Call Strategies (BTC & ETH) if missing
@@ -160,19 +152,35 @@ export class DatabaseSeedService implements OnModuleInit {
     }
 
     // Refresh existing strategies exit rules and standardize name to "Covered Call"
+    // Backfill only what's genuinely MISSING on old rows - never overwrite a value the user has
+    // actually set. This used to run unconditionally on every boot, silently reverting any
+    // manually-configured exitRules (and any strategy rename) back to these hardcoded defaults
+    // every single restart - a real bug, not a feature, since onModuleInit() runs on every boot.
     const currentStrategies = await this.strategyRepo.find();
     for (const s of currentStrategies) {
-      s.name = 'Covered Call';
+      let changed = false;
+
+      if (!s.name) {
+        s.name = 'Covered Call';
+        changed = true;
+      }
       if (!s.symbol) {
         s.symbol = 'BTCUSD';
+        changed = true;
       }
-      s.exitRules = {
-        optionProfitTargetPercent: 100,
-        optionRollAction: 'CLOSE_ONLY',
-        futureProfitTargetPercent: 4.0,
-        futureProfitExitAction: 'SQUARE_OFF_ALL',
-      };
-      await this.strategyRepo.save(s);
+      if (!s.exitRules) {
+        s.exitRules = {
+          optionProfitTargetPercent: 100,
+          optionRollAction: 'CLOSE_ONLY',
+          futureProfitTargetPercent: 4.0,
+          futureProfitExitAction: 'SQUARE_OFF_ALL',
+        };
+        changed = true;
+      }
+
+      if (changed) {
+        await this.strategyRepo.save(s);
+      }
     }
   }
 }

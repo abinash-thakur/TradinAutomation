@@ -12,8 +12,7 @@ const ACTION_LABELS: Record<string, string> = {
   BUY_FUTURE_ENTRY: 'future buy order filled',
   SELL_CALL_ENTRY: 'call sell order filled',
   BUY_FUTURE_AVERAGING: 'future averaging order filled',
-  SELL_CALL_ATM_MATCH: 'call sell order filled',
-  SELL_CALL_OTM: 'call sell order filled',
+  SELL_CALL_BEST_PREMIUM: 'call sell order filled',
 };
 
 /**

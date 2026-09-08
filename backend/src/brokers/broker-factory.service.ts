@@ -4,7 +4,6 @@ import { BrokerAccount } from '../entities/broker-account.entity';
 import { CryptoUtil } from '../config/crypto.util';
 import { DeltaExchangeAdapter } from './adapters/delta.adapter';
 import { CcxtBrokerAdapter } from './adapters/ccxt.adapter';
-import { PaperTradingAdapter } from './adapters/paper-trading.adapter';
 
 @Injectable()
 export class BrokerFactoryService {
@@ -18,6 +17,9 @@ export class BrokerFactoryService {
 
     let adapter: IBrokerAdapter;
 
+    // No silent fallback: an unrecognized brokerType throws here rather than quietly routing
+    // orders to a simulator. Trading somewhere the user didn't explicitly choose - even as a
+    // "safe" default - is worse than a loud, immediate failure.
     switch (account.brokerType) {
       case 'delta-india':
         adapter = new DeltaExchangeAdapter(true);
@@ -25,18 +27,15 @@ export class BrokerFactoryService {
       case 'delta-global':
         adapter = new DeltaExchangeAdapter(false);
         break;
-      case 'paper':
-        adapter = new PaperTradingAdapter();
-        break;
       case 'binance':
       case 'bybit':
       case 'deribit':
         adapter = new CcxtBrokerAdapter(account.brokerType);
         break;
       default:
-        // Default to CCXT if supported or Paper
-        adapter = new PaperTradingAdapter();
-        break;
+        throw new Error(
+          `Broker account "${account.name}" has unsupported brokerType "${account.brokerType}" - no adapter implemented for it.`,
+        );
     }
 
     const decryptedKey = CryptoUtil.decrypt(account.encryptedApiKey || '');

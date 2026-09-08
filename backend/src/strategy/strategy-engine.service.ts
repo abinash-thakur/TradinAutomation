@@ -101,6 +101,56 @@ export class StrategyEngineService {
   }
 
   /**
+   * Finds the Call at `atmStrike` with the best (highest) premium across the coming week.
+   * Delta settles daily, so this checks up to `maxDaysOut` daily expiries (day+1 .. day+7) and
+   * returns whichever specific contract pays the most - used both by the routine Call sell and
+   * by the profit-decay roll, so a "sell a Call at the best premium this week" decision is made
+   * exactly once, not duplicated.
+   *
+   * Each day's result is verified against `OptionsUtil.findMatchingCall`'s own documented
+   * fallback: if a specific day's expiry doesn't actually exist on the exchange, that lookup
+   * silently falls back to the nearest strike in the FULL chain (any expiry) rather than
+   * returning nothing - so a match is only accepted here if its own expiry code and strike
+   * genuinely equal what was asked for. Otherwise a missing day could get silently misattributed
+   * to some other day's contract and win the "best premium" comparison by mistake.
+   */
+  private async findBestPremiumCallThisWeek(
+    adapter: IBrokerAdapter,
+    underlying: string,
+    atmStrike: number,
+    maxDaysOut: number = 7,
+  ): Promise<{ contract: OptionContract; expiryDateString: string; expiryCode: string } | null> {
+    let best: { contract: OptionContract; expiryDateString: string; expiryCode: string } | null = null;
+    let bestPremium = 0;
+
+    for (let d = 1; d <= maxDaysOut; d++) {
+      const expiry = OptionsUtil.getNextDayExpiry(d);
+      try {
+        const chain = await adapter.getOptionChain(underlying, expiry.codeString);
+        const call = OptionsUtil.findMatchingCall(chain, atmStrike, expiry.codeString);
+        if (!call || call.strike !== atmStrike) continue;
+
+        const symbolParts = call.symbol?.split('-') || [];
+        const symbolCode = symbolParts.length >= 4 ? OptionsUtil.normalizeExpiryCode(symbolParts[3]) : '';
+        const dateCode = OptionsUtil.normalizeExpiryCode(call.expiryDate);
+        if (symbolCode !== expiry.codeString && dateCode !== expiry.codeString) continue;
+
+        const premium = call.bid || call.mark || 0;
+        if (premium <= 0) continue;
+
+        if (premium > bestPremium) {
+          bestPremium = premium;
+          best = { contract: call, expiryDateString: expiry.dateString, expiryCode: expiry.codeString };
+        }
+      } catch (e: any) {
+        this.logger.warn(`Could not fetch ${underlying} option chain for day+${d}: ${e.message}`);
+      }
+    }
+
+    return best;
+  }
+
+  /**
    * Core scheduled trigger evaluation at 3:30 PM IST every day (or manual trigger from UI)
    *
    * USER RULES:
@@ -174,53 +224,53 @@ export class StrategyEngineService {
         actionType = 'SELL_CALL_ROUTINE';
         futureLots = 0;
 
+        // Mirrors executeRoutineCallSell()'s primary gate: only sell when there's no held Call,
+        // or the held Call expires today.
         const previewOpt = strategy.state.optionPosition;
-        const futurePositionLots = strategy.state.futurePosition?.size || 0;
-        let heldCallLots =
-          previewOpt && !this.isExpiringToday(previewOpt.symbol, previewOpt.expiryDate) ? previewOpt.size : 0;
-        try {
-          const livePositions = await adapter.getPositions();
-          const openOpt = livePositions.find(
-            (p) =>
-              p.symbol.startsWith('C-') &&
-              p.side === 'sell' &&
-              p.size !== 0 &&
-              !this.isExpiringToday(p.symbol),
-          );
-          if (openOpt) {
-            heldCallLots = Math.max(heldCallLots, Math.abs(openOpt.size));
-          }
-        } catch {
-          // ignore
-        }
+        const holdingUnexpiredCall =
+          !!previewOpt && previewOpt.size > 0 && !this.isExpiringToday(previewOpt.symbol, previewOpt.expiryDate);
 
-        const maxCallsPerFuture = Math.max(1, strategy.legsConfig?.maxCallsPerFutureLot || 1);
-        const maxShortCalls = futurePositionLots * maxCallsPerFuture;
-        const availableToShort = Math.max(0, maxShortCalls - heldCallLots);
-        if (availableToShort <= 0) {
+        if (holdingUnexpiredCall) {
           optionLots = 0;
           selectedCall = null;
-          reasonText = `Future down ${drawdownPercent.toFixed(2)}% (< 1%). Future (${futurePositionLots} lot${futurePositionLots > 1 ? 's' : ''}) already carries ${heldCallLots} short Call contract${heldCallLots > 1 ? 's' : ''}, the configured maximum of ${maxShortCalls} (${maxCallsPerFuture} per future lot). Holding position (no order placed).`;
+          reasonText = `Future down ${drawdownPercent.toFixed(2)}% (< 1%). Held Call ${previewOpt!.symbol} (strike $${previewOpt!.strike}, expires ${previewOpt!.expiryDate}) does not expire today - holding, no new order.`;
         } else {
-          optionLots = Math.min(configOptionLots, availableToShort);
+          const futurePositionLots = strategy.state.futurePosition?.size || 0;
+          let heldCallLots = 0;
+          try {
+            const livePositions = await adapter.getPositions();
+            const openOpt = livePositions.find(
+              (p) =>
+                p.symbol.startsWith('C-') &&
+                p.side === 'sell' &&
+                p.size !== 0 &&
+                !this.isExpiringToday(p.symbol),
+            );
+            if (openOpt) {
+              heldCallLots = Math.abs(openOpt.size);
+            }
+          } catch {
+            // ignore
+          }
 
-          const existingCallStrike =
-            previewOpt && !this.isExpiringToday(previewOpt.symbol, previewOpt.expiryDate)
-              ? previewOpt.strike
-              : undefined;
-          const routineChoice = OptionsUtil.selectRoutineCallOption(
-            chain,
-            currentMark,
-            atmStrike,
-            existingCallStrike,
-            expiry.codeString,
-          );
-          selectedCall = routineChoice.option;
-
-          if (routineChoice.isAtmMatch) {
-            reasonText = `Future down ${drawdownPercent.toFixed(2)}% (< 1%). Shorting ${optionLots} lot Call [ATM strike $${atmStrike} matches held Call strike $${existingCallStrike}, not going for OTM].`;
+          const maxCallsPerFuture = Math.max(1, strategy.legsConfig?.maxCallsPerFutureLot || 1);
+          const maxShortCalls = futurePositionLots * maxCallsPerFuture;
+          const availableToShort = Math.max(0, maxShortCalls - heldCallLots);
+          if (availableToShort <= 0) {
+            optionLots = 0;
+            selectedCall = null;
+            reasonText = `Future down ${drawdownPercent.toFixed(2)}% (< 1%). Future (${futurePositionLots} lot${futurePositionLots > 1 ? 's' : ''}) already carries ${heldCallLots} short Call contract${heldCallLots > 1 ? 's' : ''}, the configured maximum of ${maxShortCalls} (${maxCallsPerFuture} per future lot). Holding position (no order placed).`;
           } else {
-            reasonText = `Future down ${drawdownPercent.toFixed(2)}% (< 1%). Shorting ${optionLots} lot Call [nearest OTM strike $${selectedCall?.strike || atmStrike}].`;
+            optionLots = Math.min(configOptionLots, availableToShort);
+
+            const best = await this.findBestPremiumCallThisWeek(adapter, underlying, atmStrike);
+            selectedCall = best?.contract || null;
+
+            if (best) {
+              reasonText = `Future down ${drawdownPercent.toFixed(2)}% (< 1%). Shorting ${optionLots} lot Call [ATM strike $${atmStrike}, best premium of the next 7 days, expires ${best.expiryDateString}].`;
+            } else {
+              reasonText = `Future down ${drawdownPercent.toFixed(2)}% (< 1%). No Call found at strike $${atmStrike} across the next 7 days. Holding position (no order placed).`;
+            }
           }
         }
       }
@@ -902,37 +952,30 @@ export class StrategyEngineService {
       return skipMsg;
     }
 
-    // Step 1: Detect existing Call strike from state or live broker positions.
-    // Calls expiring TODAY are ignored throughout: they are rolled out at trigger time and no
-    // longer cover the future going forward, so they must not block the next-day Call sell.
+    // USER RULE: the routine only ever sells when there is NO held Call, or the held Call
+    // expires TODAY. While a longer-dated Call (e.g. from the profit-decay roll below) is still
+    // open, this does nothing every trigger - it waits for that Call's own expiry day rather
+    // than selling more coverage on top of it. This is the primary gate; it is checked before
+    // (and independent of) the ratio cap below.
     const statedOpt = strategy.state.optionPosition;
-    let existingCallStrike: number | undefined =
-      statedOpt && !this.isExpiringToday(statedOpt.symbol, statedOpt.expiryDate) ? statedOpt.strike : undefined;
-    if (!existingCallStrike) {
-      try {
-        const livePositions = await adapter.getPositions();
-        const openOption = livePositions.find(
-          (p) => p.symbol.startsWith('C-') && p.size !== 0 && !this.isExpiringToday(p.symbol),
-        );
-        if (openOption) {
-          const parts = openOption.symbol.split('-');
-          if (parts.length >= 3 && !isNaN(Number(parts[2]))) {
-            existingCallStrike = Number(parts[2]);
-          }
-        }
-      } catch (e) {
-        // ignore
-      }
+    const holdingUnexpiredCall =
+      !!statedOpt && statedOpt.size > 0 && !this.isExpiringToday(statedOpt.symbol, statedOpt.expiryDate);
+    if (holdingUnexpiredCall) {
+      const skipMsg = `Routine check (${freqDesc}): Drawdown is ${drawdownPercent.toFixed(2)}% (< 1%). Held Call ${statedOpt.symbol} (strike $${statedOpt.strike}, expires ${statedOpt.expiryDate}) does not expire today - holding, no new order.`;
+      this.logger.log(`[${strategy.name}] ${skipMsg}`);
+      strategy.state.lastMessage = skipMsg;
+      strategy.state.lastEvaluatedAt = new Date().toISOString();
+      await this.strategyRepo.save(strategy);
+      return skipMsg;
     }
 
     // COVERED CALL RATIO ENFORCEMENT:
     // User Rule: "why you sell 6 short you only short the quantity of future you short"
-    // Total short Call contracts must NEVER exceed total Future contracts held!
+    // Total short Call contracts must NEVER exceed total Future contracts held! By this point
+    // holdingUnexpiredCall is false, so heldCallLots here only ever reflects a Call that IS
+    // expiring today (isExpiringToday excludes it) - normally 0 - or ratio-write lots > 1.
     const futureLots = strategy.state.futurePosition?.size || 0;
-    let heldCallLots =
-      statedOpt && !this.isExpiringToday(statedOpt.symbol, statedOpt.expiryDate) ? statedOpt.size : 0;
-
-    // Check live positions on broker for real-time accuracy
+    let heldCallLots = 0;
     try {
       const livePositions = await adapter.getPositions();
       const openOpt = livePositions.find(
@@ -943,7 +986,7 @@ export class StrategyEngineService {
           !this.isExpiringToday(p.symbol),
       );
       if (openOpt) {
-        heldCallLots = Math.max(heldCallLots, Math.abs(openOpt.size));
+        heldCallLots = Math.abs(openOpt.size);
       }
     } catch (e) {
       // ignore
@@ -967,19 +1010,13 @@ export class StrategyEngineService {
 
     const actualOptionLots = Math.min(optionLots, availableToShort);
 
-    // Step 2: Fetch next-day option chain & select Call according to user rule
-    const expiry = OptionsUtil.getNextDayExpiry(1);
-    const chain = await adapter.getOptionChain(underlying, expiry.codeString);
-    const { option: targetCall, isAtmMatch } = OptionsUtil.selectRoutineCallOption(
-      chain,
-      currentMark,
-      atmStrike,
-      existingCallStrike,
-      expiry.codeString,
-    );
+    // Step 2: find the Call at the current ATM strike with the best premium across the coming
+    // week (up to 7 daily expiries compared at the same strike) - replaces the old fixed
+    // "always next-day" selection.
+    const best = await this.findBestPremiumCallThisWeek(adapter, underlying, atmStrike);
 
-    if (!targetCall) {
-      const abortMsg = `Routine check (${freqDesc}): Drawdown is ${drawdownPercent.toFixed(2)}% (< 1%). No suitable next-day Call found in option chain (${expiry.codeString} / ${expiry.dateString}). Holding positions.`;
+    if (!best) {
+      const abortMsg = `Routine check (${freqDesc}): Drawdown is ${drawdownPercent.toFixed(2)}% (< 1%). No Call found at strike $${atmStrike} across the next 7 days. Holding positions.`;
       this.logger.warn(`[${strategy.name}] ${abortMsg}`);
       strategy.state.lastMessage = abortMsg;
       strategy.state.lastEvaluatedAt = new Date().toISOString();
@@ -987,9 +1024,8 @@ export class StrategyEngineService {
       return abortMsg;
     }
 
-    const strikeDesc = isAtmMatch
-      ? `ATM strike $${targetCall.strike} (matches held Call strike $${existingCallStrike}, not going for OTM)`
-      : `nearest OTM strike $${targetCall.strike} (next-day ATM $${atmStrike} does not match held Call $${existingCallStrike || 'none'})`;
+    const targetCall = best.contract;
+    const strikeDesc = `ATM strike $${targetCall.strike}, best premium of the next 7 days (expires ${best.expiryDateString})`;
 
     // Step 3: Place SELL Order for the selected Call
     const optionOrderType = opts?.optionOrderType || 'limit';
@@ -1037,7 +1073,7 @@ export class StrategyEngineService {
       : (optionPrice || targetCall.bid || targetCall.mark || 0);
 
     // Step 4: Log trade
-    const actionTag = isAtmMatch ? 'SELL_CALL_ATM_MATCH' : 'SELL_CALL_OTM';
+    const actionTag = 'SELL_CALL_BEST_PREMIUM';
     await this.logTrade(strategy,
       account.brokerType,
       targetCall.symbol,
@@ -1064,7 +1100,7 @@ export class StrategyEngineService {
       entryPremium: newEntryPremium,
       currentPremium: entryPremium,
       pnlPercent: 0,
-      expiryDate: expiry.dateString,
+      expiryDate: best.expiryDateString,
       rollCount: existingOpt?.rollCount ?? strategy.state.lastRollCount ?? 0,
       entryTimestamp: new Date().toISOString(),
     };
@@ -1222,10 +1258,145 @@ export class StrategyEngineService {
   }
 
   /**
+   * DECAY ROLL - called from monitorActivePositions() when the held short Call's `pnlPercent`
+   * (how much of its entry premium has decayed away) reaches `exitRules.optionProfitTargetPercent`
+   * (default 75%). Books that profit by buying the Call back, then immediately shorts a fresh
+   * Call at the CURRENT ATM strike (recomputed fresh, not the old strike), picking whichever
+   * expiry over the coming week pays the best premium via findBestPremiumCallThisWeek(). The
+   * Future leg is never touched here.
+   *
+   * Non-fatal by design, like the rest of this engine: if the buy-to-close fails, this leaves
+   * the decayed Call exactly as it was and simply retries on the next 10-second tick. If the
+   * close succeeds but the re-sell fails (or no strike is found), the position is left with NO
+   * option leg rather than retried in a loop - the next scheduled trigger's routine-sell gate
+   * (executeRoutineCallSell: "no held Call, or held Call expires today") picks the gap back up
+   * on its own, exactly as it would for any other reason the option leg went missing.
+   */
+  private async executeOptionDecayRoll(
+    strategy: Strategy,
+    adapter: IBrokerAdapter,
+    account: BrokerAccount,
+    currentMark: number,
+  ): Promise<void> {
+    const op = strategy.state.optionPosition;
+    if (!op || op.size <= 0) return;
+
+    const symbol = strategy.symbol || 'BTCUSD';
+    const { underlying, strikeInterval } = OptionsUtil.getUnderlyingAndStrikeInterval(symbol, currentMark);
+    const marginMode = this.getMarginMode(strategy);
+    const decayTarget = strategy.exitRules?.optionProfitTargetPercent || 75;
+
+    this.logger.warn(
+      `[${strategy.name}] Option decay target reached (${op.pnlPercent.toFixed(2)}% >= ${decayTarget}%). Rolling: buying back ${op.symbol}, then shorting the best-premium Call available this week.`,
+    );
+
+    // 1. Buy to close the decayed Call
+    const closeOrder = await adapter.placeOrder({
+      symbol: op.symbol,
+      productId: op.productId,
+      side: 'buy',
+      orderType: 'market',
+      size: op.size,
+      marginMode,
+    });
+
+    if (!closeOrder || closeOrder.status === 'rejected') {
+      this.logger.error(
+        `[${strategy.name}] Decay roll: buy-to-close rejected for ${op.symbol} (${closeOrder?.message}). Will retry next cycle.`,
+      );
+      return;
+    }
+
+    const exitPremium = closeOrder.averagePrice > 0 ? closeOrder.averagePrice : op.currentPremium;
+    const legPnl = op.entryPremium > 0 ? (op.entryPremium - exitPremium) * op.size : 0;
+
+    await this.logTrade(
+      strategy,
+      account.brokerType,
+      op.symbol,
+      'BUY_CLOSE_DECAYED_CALL',
+      exitPremium,
+      op.size,
+      `Decay roll: bought back ${op.size} lot(s) of ${op.symbol} @ $${exitPremium.toFixed(2)} (entry $${op.entryPremium.toFixed(2)}, realized $${legPnl.toFixed(2)}) after ${op.pnlPercent.toFixed(2)}% decay.`,
+    );
+
+    strategy.state.optionPosition = null;
+    strategy.state.totalRealizedPnl = (strategy.state.totalRealizedPnl || 0) + legPnl;
+
+    // 2. Sell a fresh Call at the current ATM strike, best premium across the coming week
+    const atmStrike = OptionsUtil.roundToNearestStrike(currentMark, strikeInterval);
+    const best = await this.findBestPremiumCallThisWeek(adapter, underlying, atmStrike);
+
+    if (!best) {
+      const msg = `Decay roll: closed ${op.symbol} for $${legPnl.toFixed(2)} realized, but no Call found at strike $${atmStrike} across the next 7 days to re-sell. Position left flat; the next scheduled trigger will sell a fresh Call.`;
+      this.logger.warn(`[${strategy.name}] ${msg}`);
+      strategy.state.lastMessage = msg;
+      strategy.state.lastEvaluatedAt = new Date().toISOString();
+      await this.strategyRepo.save(strategy);
+      this.gateway.broadcastStrategyUpdate(strategy);
+      return;
+    }
+
+    const targetCall = best.contract;
+    const optionPrice = targetCall.bid || targetCall.mark;
+    const sellOrder = await adapter.placeOrder({
+      symbol: targetCall.symbol,
+      productId: targetCall.productId,
+      side: 'sell',
+      orderType: 'limit',
+      price: optionPrice,
+      size: op.size,
+      marginMode,
+    });
+
+    if (!sellOrder || sellOrder.status === 'rejected') {
+      const msg = `Decay roll: closed ${op.symbol} for $${legPnl.toFixed(2)} realized, but the re-sell of ${targetCall.symbol} was rejected (${sellOrder?.message}). Position left flat; the next scheduled trigger will sell a fresh Call.`;
+      this.logger.error(`[${strategy.name}] ${msg}`);
+      strategy.state.lastMessage = msg;
+      strategy.state.lastEvaluatedAt = new Date().toISOString();
+      await this.strategyRepo.save(strategy);
+      this.gateway.broadcastStrategyUpdate(strategy);
+      return;
+    }
+
+    const newEntryPremium = sellOrder.averagePrice > 0 ? sellOrder.averagePrice : (optionPrice || targetCall.mark || 0);
+
+    await this.logTrade(
+      strategy,
+      account.brokerType,
+      targetCall.symbol,
+      'SELL_CALL_BEST_PREMIUM',
+      newEntryPremium,
+      op.size,
+      `Decay roll: shorted ${op.size} lot(s) of ${targetCall.symbol} @ $${newEntryPremium.toFixed(2)} (strike $${targetCall.strike}, best premium of the next 7 days, expires ${best.expiryDateString}), replacing ${op.symbol} bought back @ $${exitPremium.toFixed(2)} (realized $${legPnl.toFixed(2)}).`,
+    );
+
+    strategy.state.optionPosition = {
+      symbol: targetCall.symbol,
+      productId: targetCall.productId,
+      side: 'sell',
+      strike: targetCall.strike,
+      size: op.size,
+      entryPremium: newEntryPremium,
+      currentPremium: newEntryPremium,
+      pnlPercent: 0,
+      expiryDate: best.expiryDateString,
+      rollCount: (op.rollCount || 0) + 1,
+      entryTimestamp: new Date().toISOString(),
+    };
+
+    const successMsg = `Decay roll complete: booked $${legPnl.toFixed(2)} on ${op.symbol}, now short ${op.size} lot(s) ${targetCall.symbol} @ $${newEntryPremium.toFixed(2)} (expires ${best.expiryDateString}).`;
+    strategy.state.lastMessage = successMsg;
+    strategy.state.lastEvaluatedAt = new Date().toISOString();
+    await this.strategyRepo.save(strategy);
+    this.gateway.broadcastStrategyUpdate(strategy);
+  }
+
+  /**
    * Continuous Real-Time Position & Profit Monitoring Loop (runs every 10 seconds):
    * 1. Synchronizes open positions with live broker exchange data.
-   * 2. Checks 4% to 5% future profit target.
-   * 3. Squares off ALL positions (future + call) immediately and DO NOTHING ELSE when target is hit.
+   * 2. Checks the option profit-decay roll target (default 75%) and the 4% to 5% future profit target.
+   * 3. Squares off ALL positions (future + call) immediately and DO NOTHING ELSE when the future target is hit.
    */
   async monitorActivePositions(): Promise<void> {
     const activeStrategies = await this.strategyRepo.find({ where: { status: 'ACTIVE' } });
@@ -1262,7 +1433,7 @@ export class StrategyEngineService {
           strategy.state.drawdownPercent = ((ticker.mark - buyingStrike) / buyingStrike) * 100;
         }
 
-        // 2. Update Option PnL (informational, no 70% roll)
+        // 2. Update Option PnL, then check the profit-decay roll target
         if (strategy.state.optionPosition && strategy.state.optionPosition.size > 0) {
           const op = strategy.state.optionPosition;
           const chain = await adapter.getOptionChain(symbol, op.expiryDate);
@@ -1272,6 +1443,19 @@ export class StrategyEngineService {
           op.currentPremium = currentPremium;
           if (op.entryPremium > 0) {
             op.pnlPercent = ((op.entryPremium - currentPremium) / op.entryPremium) * 100;
+          }
+
+          // -------------------------------------------------------------
+          // CONTINUOUS RULE: Option Profit-Decay Roll (default 75%)
+          // When the held short Call has decayed this much from its entry premium, book the
+          // profit (buy it back) and immediately short a fresh Call at the current ATM strike,
+          // choosing whichever expiry over the coming week pays the best premium. The Future
+          // leg is untouched - this only ever replaces the option leg.
+          // -------------------------------------------------------------
+          const decayTarget = strategy.exitRules?.optionProfitTargetPercent || 75;
+          if (op.pnlPercent >= decayTarget) {
+            await this.executeOptionDecayRoll(strategy, adapter, account, ticker.mark);
+            continue;
           }
         }
 
@@ -1502,8 +1686,7 @@ export class StrategyEngineService {
       'BUY_FUTURE_ENTRY',
       'SELL_CALL_ENTRY',
       'BUY_FUTURE_AVERAGING',
-      'SELL_CALL_ATM_MATCH',
-      'SELL_CALL_OTM',
+      'SELL_CALL_BEST_PREMIUM',
     ]);
     if (ORDER_PLACED_ACTIONS.has(action)) {
       void this.email.notifyOrderPlaced({
