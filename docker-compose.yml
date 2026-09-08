@@ -1,32 +1,38 @@
 services:
+
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    # No published port: nginx (the frontend container) is the sole entry point, proxying
-    # /api and /socket.io to this service over the internal Compose network. Uncomment below
-    # only for local debugging (curl/Postman straight to the API) - never on a server exposed
-    # to the internet, since that bypasses nginx entirely and puts the trading API directly on
-    # the open port.
-    # ports:
-    #   - "3000:3000"
+
     env_file:
       - ./backend/.env
+
+    networks:
+      - trading-network
+
     restart: unless-stopped
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+
       args:
-        # Empty = same-origin: nginx.conf proxies /api and /socket.io straight through to the
-        # backend container, so the browser only ever talks to this one origin and never makes a
-        # cross-origin request. Baked into the JS bundle at build time (Vite env vars aren't read
-        # at container start) - only set this to an absolute URL if the backend is NOT reachable
-        # through this nginx proxy (e.g. the frontend is served from somewhere else entirely).
         VITE_API_BASE: ${VITE_API_BASE:-}
+
     ports:
       - "80:80"
+
     depends_on:
       - backend
+
+    networks:
+      - trading-network
+
     restart: unless-stopped
+
+
+networks:
+  trading-network:
+    external: true
